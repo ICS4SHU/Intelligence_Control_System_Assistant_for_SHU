@@ -44,19 +44,20 @@ Learning Assistant 是一个现代化的全栈 Web 应用程序，采用前后�
 ### 前端
 
 1. 安装依赖：
+
 ```bash
 cd learning-assistant
 npm install
 ```
 
 2. 创建 .env 文件并设置后端 API 地址：
-3. 
+
 ```bash
 VITE_API_BASE_URL=http://localhost:8000
 ```
 
-1. 启动开发服务器：
-2. 
+3. 启动开发服务器：
+
 ```bash
 npm run dev
 ```
@@ -77,7 +78,7 @@ conda activate ICS4SHU # 激活你的 Conda 环境
 pip install -r requirements.txt
 ```
 
-1. 启动后端服务器：
+3. 启动后端服务器：
 
 ```bash
 python -m uvicorn main:app --reload --port 8000
