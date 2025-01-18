@@ -1,5 +1,5 @@
 from fastapi import APIRouter, Depends
-from ..models import Session, DeleteSessions
+from ..models import Session, DeleteSessions, Database
 from ..dependencies import verify_api_key, forward_request
 
 router = APIRouter()
@@ -10,6 +10,8 @@ async def create_session(
     chat_id: str, session: Session, api_key: str = Depends(verify_api_key)
 ):
     try:
+        db = Database()
+        db.save_session(session)
         response = await forward_request(
             "POST",
             f"/api/v1/chats/{chat_id}/sessions",
@@ -18,6 +20,8 @@ async def create_session(
         return response
     except Exception as e:
         return {"code": 500, "message": str(e)}
+    finally:
+        db.close()
 
 
 @router.get("/sessions")
@@ -30,6 +34,8 @@ async def get_sessions(
     api_key: str = Depends(verify_api_key),
 ):
     try:
+        db = Database()
+        # TODO: 从数据库获取会话
         params = {
             "page": page,
             "page_size": page_size,
@@ -42,6 +48,8 @@ async def get_sessions(
         return response
     except Exception as e:
         return {"code": 500, "message": str(e)}
+    finally:
+        db.close()
 
 
 @router.delete("/sessions")
@@ -49,6 +57,8 @@ async def delete_sessions(
     chat_id: str, sessions: DeleteSessions, api_key: str = Depends(verify_api_key)
 ):
     try:
+        db = Database()
+        db.delete_sessions(sessions.ids)
         response = await forward_request(
             "DELETE",
             f"/api/v1/chats/{chat_id}/sessions",
@@ -57,3 +67,5 @@ async def delete_sessions(
         return response
     except Exception as e:
         return {"code": 500, "message": str(e)}
+    finally:
+        db.close()
