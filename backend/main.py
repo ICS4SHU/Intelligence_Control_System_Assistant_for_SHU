@@ -1,7 +1,17 @@
+import os
+import sys
 import uvicorn
-import socket
+from pathlib import Path
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+
+
+sys.path.append(str(Path(__file__).resolve().parent.parent))
+
+if __name__ == "__main__" and __package__ is None:
+    __package__ = "backend"
+
 from .routers import chat_sessions, completions
 from .config import FRONTEND_ORIGIN
 
@@ -25,4 +35,4 @@ app.include_router(completions.router, prefix="/api/v1/chats/{chat_id}")
 
 if __name__ == "__main__":
     # get current IP address
-    uvicorn.run(app, host=socket.gethostbyname(socket.gethostname()), port=8000)
+    uvicorn.run(app, host="127.0.0.1", port=8000)
