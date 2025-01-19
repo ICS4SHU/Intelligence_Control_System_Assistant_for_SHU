@@ -12,8 +12,8 @@ sys.path.append(str(Path(__file__).resolve().parent.parent))
 if __name__ == "__main__" and __package__ is None:
     __package__ = "backend"
 
-from .routers import chat_sessions, completions
-from .config import FRONTEND_ORIGIN
+from routers import chat_sessions, completions
+from config import FRONTEND_ORIGIN
 
 app = FastAPI(title="Learning Assistant API")
 

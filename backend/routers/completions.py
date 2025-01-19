@@ -3,8 +3,8 @@ import json
 import aiohttp
 from fastapi.responses import StreamingResponse
 from fastapi import APIRouter, Depends
-from ..models import Message, Database
-from ..dependencies import verify_api_key
+from models import Message, Database
+from dependencies import verify_api_key
 
 
 router = APIRouter()

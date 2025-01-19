@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Depends
-from ..models import Session, DeleteSessions, Database
-from ..dependencies import verify_api_key, forward_request
+from models import Session, DeleteSessions, Database
+from dependencies import verify_api_key, forward_request
 
 router = APIRouter()
 
