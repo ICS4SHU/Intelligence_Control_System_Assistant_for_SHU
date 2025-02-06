@@ -16,6 +16,7 @@ async def create_session(
             "POST",
             f"/api/v1/chats/{chat_id}/sessions",
             json_data={"name": session.name},
+            api_key=api_key,
         )
         return response
     except Exception as e:
@@ -43,7 +44,7 @@ async def get_sessions(
             "desc": str(desc).lower(),
         }
         response = await forward_request(
-            "GET", f"/api/v1/chats/{chat_id}/sessions", params=params
+            "GET", f"/api/v1/chats/{chat_id}/sessions", params=params, api_key=api_key
         )
         return response
     except Exception as e:

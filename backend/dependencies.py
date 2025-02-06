@@ -1,12 +1,10 @@
-import os
 from typing import Dict
 
 import aiohttp
-from fastapi import HTTPException, Security
+from fastapi import HTTPException, Security, Depends
 from fastapi.security import APIKeyHeader
 
-API_KEY = os.getenv("API_KEY")
-API_BASE_URL = os.getenv("API_BASE_URL")
+from .config import API_KEY, API_BASE_URL
 
 # API Key 验证
 API_KEY_HEADER = APIKeyHeader(name="Authorization")
@@ -27,11 +25,12 @@ async def forward_request(
     headers: dict = None,
     json_data: dict = None,
     params: dict = None,
+    api_key: str = Depends(verify_api_key),
 ) -> Dict:
     url = f"{API_BASE_URL}{endpoint}"
     if headers is None:
         headers = {}
-    headers["Authorization"] = f"Bearer {API_KEY}"
+    headers["Authorization"] = f"Bearer {api_key}"
 
     async with aiohttp.ClientSession() as session:
         async with session.request(

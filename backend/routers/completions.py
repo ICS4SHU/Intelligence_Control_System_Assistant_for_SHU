@@ -1,16 +1,17 @@
 import os
 import json
 import aiohttp
+
+from starlette.config import Config
 from fastapi.responses import StreamingResponse
 from fastapi import APIRouter, Depends
+
+from ..config import API_BASE_URL
 from ..models import Message, Database
 from ..dependencies import verify_api_key
 
 
 router = APIRouter()
-
-API_BASE_URL = os.getenv("API_BASE_URL")
-API_KEY = os.getenv("API_KEY")
 
 
 @router.post("/completions")
@@ -23,7 +24,7 @@ async def create_completion(
 
         url = f"{API_BASE_URL}/api/v1/chats/{chat_id}/completions"
         headers = {
-            "Authorization": f"Bearer {API_KEY}",
+            "Authorization": f"Bearer {api_key}",
             "Content-Type": "application/json",
         }
 
