@@ -1,9 +1,9 @@
 import os
 from typing import Dict
-
 import aiohttp
 from fastapi import HTTPException, Security
 from fastapi.security import APIKeyHeader
+from auth import get_current_user  # 从 auth.py 导入验证用户的函数
 
 API_KEY = os.getenv("API_KEY")
 API_BASE_URL = os.getenv("API_BASE_URL")
@@ -19,6 +19,16 @@ async def verify_api_key(api_key: str = Security(API_KEY_HEADER)):
     if key != API_KEY:
         raise HTTPException(status_code=401, detail="Invalid API key")
     return key
+
+
+async def get_current_user_from_token(token: str = Security(API_KEY_HEADER)):
+    """
+    验证并提取当前用户信息。
+    """
+    user = await get_current_user(token)  # 使用auth.py中的get_current_user来获取当前用户信息
+    if user is None:
+        raise HTTPException(status_code=401, detail="Invalid credentials")
+    return user
 
 
 async def forward_request(
