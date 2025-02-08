@@ -3,6 +3,8 @@ import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import '../css/LoginPage.css'; // 导入CSS文件
 
+const API_BASE_URL = 'http://127.0.0.1:8000'; // 直接在代码中设置 API 地址
+
 const LoginPage = ({ onLogin }) => {
   const [loginId, setLoginId] = useState('');
   const [password, setPassword] = useState('');
@@ -18,9 +20,10 @@ const LoginPage = ({ onLogin }) => {
     }
 
     try {
-      const response = await axios.post('/login', { login_id: loginId, password });
+      const response = await axios.post(`${API_BASE_URL}/api/v1/auth/login`, { login_id: loginId, password });
       if (response.data.access_token) {
-        onLogin(response.data.access_token); // 传递token到父组件
+        localStorage.setItem('userToken', response.data.access_token); // 保存 token 到 localStorage
+        onLogin(response.data.access_token); // 传递 token 到父组件
         navigate('/chat'); // 登录成功后跳转到聊天页面
       } else {
         setError('登录失败，请检查用户名/学号或密码');

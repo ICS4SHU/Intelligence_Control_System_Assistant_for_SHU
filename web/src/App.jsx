@@ -5,10 +5,11 @@ import LoginPage from './components/LoginPage';
 import RegisterPage from './components/RegisterPage';
 
 function App() {
-  const [userToken, setUserToken] = useState(null);
+  const [userToken, setUserToken] = useState(localStorage.getItem('userToken')); // 从 localStorage 获取用户 token
 
   const handleLogin = (token) => {
     setUserToken(token);
+    localStorage.setItem('userToken', token); // 保存 token 到 localStorage
   };
 
   return (
@@ -16,7 +17,10 @@ function App() {
       <Routes>
         <Route path="/login" element={<LoginPage onLogin={handleLogin} />} />
         <Route path="/register" element={<RegisterPage />} />
-        <Route path="/chat" element={userToken ? <ChatInterface /> : <LoginPage onLogin={handleLogin} />} />
+        <Route
+          path="/chat"
+          element={userToken ? <ChatInterface /> : <LoginPage onLogin={handleLogin} />}
+        />
         <Route path="/" element={<LoginPage onLogin={handleLogin} />} />
       </Routes>
     </Router>

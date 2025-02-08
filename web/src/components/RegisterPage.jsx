@@ -12,21 +12,27 @@ const RegisterPage = () => {
   const [error, setError] = useState('');
   const navigate = useNavigate();
 
+  const apiBaseUrl = 'http://127.0.0.1:8000'; // 直接在代码中设置 base URL
+
   const handleRegister = async (e) => {
     e.preventDefault();
     setLoading(true);
     setError('');
 
     try {
-      const response = await axios.post('/register', {
+      const response = await axios.post(`${apiBaseUrl}/api/v1/auth/register`, {
         username,
         password,
         email,
-        student_id: studentId
+        student_id: studentId,
       });
 
-      // 如果返回的注册成功，跳转到登录页面
-      navigate('/login');
+      // 如果注册成功，跳转到登录页面
+      if (response.data.code === 0) {
+        navigate('/login');
+      } else {
+        setError(response.data.message || '注册失败');
+      }
     } catch (error) {
       setError('注册失败，请检查网络或联系管理员');
       console.error('注册失败', error);

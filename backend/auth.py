@@ -102,16 +102,18 @@ async def login_for_access_token(form_data: UserLogin):
         """, (form_data.login_id, form_data.login_id))
         user = cursor.fetchone()
 
-        if not user or not verify_password(form_data.password, user["hashed_password"]):
+        # 确保查询到用户并且密码验证成功
+        if not user or not verify_password(form_data.password, user[4]):  # user[4] 是 hashed_password
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
                 detail="Incorrect username or password",
                 headers={"WWW-Authenticate": "Bearer"},
             )
 
+        # 创建访问令牌
         access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
         access_token = create_access_token(
-            data={"sub": user["id"]}, expires_delta=access_token_expires
+            data={"sub": user[0]}, expires_delta=access_token_expires  # user[0] 是 user_id
         )
         return {"access_token": access_token, "token_type": "bearer"}
     finally:
