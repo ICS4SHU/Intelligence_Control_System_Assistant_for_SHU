@@ -11,14 +11,19 @@ router = APIRouter()
 API_BASE_URL = os.getenv("API_BASE_URL")
 API_KEY = os.getenv("API_KEY")
 
+
 @router.post("/completions")
 async def create_completion(
-    chat_id: str, message: Message, user: dict = Depends(get_current_user_from_token)  # 获取当前用户信息
+    chat_id: str, message: Message,
+    user: dict = Depends(get_current_user_from_token)  # 获取当前用户信息
 ):
     db = Database()
     try:
+        # 获取当前用户信息
         current_user = user
-        message.user_id = current_user.id  # 将消息与当前用户绑定
+
+        # 在保存消息时将消息与当前用户绑定
+        message.user_id = current_user.id  # 假设Message模型有user_id字段来保存消息的所属用户
         db.save_message(message)
 
         url = f"{API_BASE_URL}/api/v1/chats/{chat_id}/completions"

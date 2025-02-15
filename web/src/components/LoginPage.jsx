@@ -10,7 +10,6 @@ const LoginPage = ({ onLogin }) => {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const navigate = useNavigate();
-
   const handleLogin = async (e) => {
     e.preventDefault();
 
@@ -23,8 +22,13 @@ const LoginPage = ({ onLogin }) => {
       const response = await axios.post(`${API_BASE_URL}/api/v1/auth/login`, { login_id: loginId, password });
       if (response.data.access_token) {
         localStorage.setItem('userToken', response.data.access_token); // 保存 token 到 localStorage
+        localStorage.setItem('userId', response.data.user); // 保存 user_id 到 localStorage
+
         onLogin(response.data.access_token); // 传递 token 到父组件
-        navigate('/chat'); // 登录成功后跳转到聊天页面
+        
+        //navigate('/chat/${response.data.access_token}'); // 登录成功后跳转到聊天页面
+        navigate('/chat')
+
       } else {
         setError('登录失败，请检查用户名/学号或密码');
       }

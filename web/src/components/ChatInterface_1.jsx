@@ -9,8 +9,7 @@ import axios from 'axios';
 const API_BASE_URL = 'http://223.4.250.237';
 const API_KEY = 'ragflow-E0ZmY5M2E4YmM1MjExZWY4ZWNlMDI0Mm';
 const CHAT_ID = 'fe9beac2bc2311efb9e60242ac120006';
-const uid = localStorage.getItem('userId');
-const FAVORITE_USER_ID = uid;
+const FAVORITE_USER_ID = 'favorite_user';
 
 const ChatInterface = () => {
   const [conversations, setConversations] = useState([]);
@@ -23,7 +22,6 @@ const ChatInterface = () => {
   const [favorites, setFavorites] = useState([]);
   const chatEndRef = useRef(null);
 
-  const uid = localStorage.getItem('userId');
 
   const scrollToBottom = () => {
     chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -66,13 +64,12 @@ const ChatInterface = () => {
       const response = await axios.get(
         `${API_BASE_URL}/api/v1/chats/${CHAT_ID}/sessions`,
         {
-          headers: { Authorization: `Bearer ${API_KEY}`   },
+          headers: { Authorization: `Bearer ${API_KEY}` },
           params: {
             page: 1,
             page_size: 30,
             orderby: 'update_time',
-            desc: true,
-            user_id: uid  // 将uid作为请求参数
+            desc: true
           }
         }
       );
@@ -130,7 +127,6 @@ const ChatInterface = () => {
 
   const switchSession = (sessionId) => {
     if (sessionId === currentConversationId) return;
-    const uid = localStorage.getItem('userId');  // 获取当前用户的uid
     const targetSession = [...conversations, ...favorites].find(conv => conv.id === sessionId);
     if (targetSession) {
       setCurrentConversationId(sessionId);
@@ -142,11 +138,10 @@ const ChatInterface = () => {
     const sessionName = prompt('请输入会话名称:');
     if (!sessionName) return;
 
-    const uid = localStorage.getItem('userId');  // 获取当前用户的uid
     try {
       const response = await axios.post(
         `${API_BASE_URL}/api/v1/chats/${CHAT_ID}/sessions`,
-        { name: sessionName, user_id: uid },  // 传递uid给后端
+        { name: sessionName },
         { headers: { Authorization: `Bearer ${API_KEY}` } }
       );
 
@@ -155,7 +150,7 @@ const ChatInterface = () => {
           id: response.data.data.id,
           name: sessionName,
           messages: response.data.data.messages || [],
-          user_id: uid
+          user_id: ''
         };
         setConversations(prev => [newSession, ...prev]);
         switchSession(newSession.id);
@@ -169,8 +164,7 @@ const ChatInterface = () => {
     if (!inputValue.trim() || !currentConversationId || isSending) return;
 
     setIsSending(true);
-    const uid = localStorage.getItem('userId');  // 获取当前用户的uid
-    const userMessage = { role: 'user', content: inputValue, user_id: uid };  // 将uid加入消息中
+    const userMessage = { role: 'user', content: inputValue };
     const assistantMessage = { role: 'assistant', content: '' };
 
     const updatedSession = {
@@ -197,8 +191,7 @@ const ChatInterface = () => {
           body: JSON.stringify({
             question: userMessage.content,
             stream: true,
-            session_id: currentConversationId,
-            user_id: uid  // 将uid传递给后端
+            session_id: currentConversationId
           })
         }
       );

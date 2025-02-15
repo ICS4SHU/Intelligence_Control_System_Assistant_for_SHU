@@ -34,6 +34,8 @@ app.include_router(chat_sessions.router, prefix="/api/v1/chats/{chat_id}")
 app.include_router(completions.router, prefix="/api/v1/chats/{chat_id}")
 app.include_router(auth.router, prefix="/api/v1/auth")
 
+
+
 if __name__ == "__main__":
     # get current IP address
     uvicorn.run(app, host="127.0.0.1", port=8000)

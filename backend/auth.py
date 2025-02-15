@@ -115,6 +115,6 @@ async def login_for_access_token(form_data: UserLogin):
         access_token = create_access_token(
             data={"sub": user[0]}, expires_delta=access_token_expires  # user[0] 是 user_id
         )
-        return {"access_token": access_token, "token_type": "bearer"}
+        return {"access_token": access_token, "token_type": "bearer", "user": user[0]}
     finally:
         db.close()
