@@ -11,9 +11,9 @@ sys.path.append(str(Path(__file__).resolve().parent.parent))
 if __name__ == "__main__" and __package__ is None:
     __package__ = "backend"
 
-from .routers import chat_sessions, completions
-from .config import FRONTEND_ORIGIN
-
+from routers import chat_sessions, completions
+from config import FRONTEND_ORIGIN
+import auth
 app = FastAPI(title="Learning Assistant API")
 
 origins = [FRONTEND_ORIGIN]
@@ -31,6 +31,7 @@ app.add_middleware(
 
 app.include_router(chat_sessions.router, prefix="/api/v1/chats/{chat_id}")
 app.include_router(completions.router, prefix="/api/v1/chats/{chat_id}")
+app.include_router(auth.router, prefix="/api/v1/auth")
 
 if __name__ == "__main__":
     # get current IP address
