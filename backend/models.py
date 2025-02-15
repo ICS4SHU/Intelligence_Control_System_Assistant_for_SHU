@@ -1,5 +1,6 @@
 import sqlite3
-from pydantic import BaseModel
+import uuid
+from pydantic import BaseModel, field_validator, EmailStr
 from typing import List, Optional, Dict, Any
 from datetime import datetime
 from passlib.context import CryptContext
@@ -22,8 +23,15 @@ class User(BaseModel):
 class UserCreate(BaseModel):
     username: Optional[str] = None
     student_id: Optional[str] = None
-    email: str
+    email: EmailStr
     password: str
+
+    
+    @field_validator('password')
+    def password_must_be_strong(cls, v):
+        if len(v) < 8:
+            raise ValueError('Password must be at least 8 characters long')
+        return v
 
 class UserLogin(BaseModel):
     login_id: str  # 可以是username或student_id
@@ -45,8 +53,18 @@ class Message(BaseModel):
 class Session(BaseModel):
     id: str
     name: str
+    user_id: str
     created_at: datetime
     updated_at: datetime
+    is_active: bool = True
+
+class SessionCreate(BaseModel):
+    name: str
+    user_id: str
+    
+class SessionUpdate(BaseModel):
+    name: Optional[str] = None
+    is_active: Optional[bool] = None
 
 
 class DeleteSessions(BaseModel):
@@ -66,7 +84,7 @@ class Database:
             id TEXT PRIMARY KEY,
             username TEXT UNIQUE,
             student_id TEXT UNIQUE,
-            email TEXT UNIQUE NOT NULL,
+            email TEXT UNIQUE NOT NULL COLLATE NOCASE,
             hashed_password TEXT NOT NULL,
             created_at TEXT NOT NULL
         )
@@ -97,17 +115,79 @@ class Database:
         """)
         self.conn.commit()
 
-    def save_session(self, session: Session, user_id: str) -> None:
+    def create_session(self, session: SessionCreate) -> Session:
+        cursor = self.conn.cursor()
+        session_id = str(uuid.uuid4())
+        now = datetime.now().isoformat()
+        cursor.execute("""
+            INSERT INTO sessions (id, name, user_id, created_at, updated_at)
+            VALUES (?, ?, ?, ?, ?)
+        """, (session_id, session.name, session.user_id, now, now, True))
+        self.conn.commit()
+        return Session(
+            id=session_id, 
+            name=session.name, 
+            user_id=session.user_id, 
+            created_at=now, 
+            updated_at=now,
+            is_active=True
+        )
+    def update_session(self, session_id: str, user_id: str, update_data: SessionUpdate) -> Optional[Session]:
+        cursor = self.conn.cursor()
+        updates = []
+        params = []
+        if update_data.name is not None:
+            updates.append("name = ?")
+            params.append(update_data.name)
+        if update_data.is_active is not None:
+            updates.append("is_active = ?")
+            params.append(update_data.is_active)
+        
+        if not updates:
+            return None
+            
+        params.extend([session_id, user_id])
+        cursor.execute(f"""
+            UPDATE sessions 
+            SET {', '.join(updates)}, updated_at = ?
+            WHERE id = ? AND user_id = ?
+            RETURNING id, name, user_id, created_at, updated_at, is_active
+        """, (*params, datetime.now().isoformat()))
+        
+        result = cursor.fetchone()
+        if result:
+            return Session(
+                id=result[0],
+                name=result[1],
+                user_id=result[2],
+                created_at=result[3],
+                updated_at=result[4],
+                is_active=result[5]
+            )
+        return None
+
+    def archive_session(self, session_id: str, user_id: str) -> bool:
         cursor = self.conn.cursor()
         cursor.execute("""
-            INSERT OR REPLACE INTO sessions (id, name, created_at, updated_at, user_id)
+            UPDATE sessions 
+            SET is_active = FALSE, updated_at = ?
+            WHERE id = ? AND user_id = ?
+        """, (datetime.now().isoformat(), session_id, user_id))
+        self.conn.commit()
+        return cursor.rowcount > 0
+
+    def save_session(self, session: Session) -> None:
+        cursor = self.conn.cursor()
+        cursor.execute("""
+            INSERT OR REPLACE INTO sessions
+            (id, name, user_id, created_at, updated_at)
             VALUES (?, ?, ?, ?, ?)
         """, (
             session.id,
             session.name,
+            session.user_id,
             session.created_at.isoformat(),
             session.updated_at.isoformat(),
-            user_id,
         ))
         self.conn.commit()
 
@@ -128,6 +208,46 @@ class Database:
         )
         self.conn.commit()
 
+    def get_sessions(
+        self,
+        user_id: str,
+        active_only: bool = True,
+        page: int = 1,
+        page_size: int = 30
+    ) -> List[Dict[str, Any]]:
+        cursor = self.conn.cursor()
+        query = """
+            SELECT id, name, created_at, updated_at, is_active 
+            FROM sessions 
+            WHERE user_id = ?
+        """
+        params = [user_id]
+        
+        if active_only:
+            query += " AND is_active = ?"
+            params.append(True)
+            
+        query += """
+            ORDER BY created_at DESC
+            LIMIT ? OFFSET ?
+        """
+        params.extend([page_size, (page-1)*page_size])
+        
+        cursor.execute(query, params)
+        return [dict(row) for row in cursor.fetchall()]
+    
+    def get_session_details(self, session_id: str, user_id: str) -> Optional[Dict[str, Any]]:
+        cursor = self.conn.cursor()
+        cursor.execute("""
+            SELECT id, name, created_at, updated_at, is_active
+            FROM sessions
+            WHERE id = ? AND user_id = ?
+        """, (session_id, user_id))
+        result = cursor.fetchone()
+        if result:
+            return dict(result)
+        return None
+    
     def get_session_messages(self, session_id: str) -> List[Dict[str, Any]]:
         cursor = self.conn.cursor()
         cursor.execute(
@@ -140,21 +260,32 @@ class Database:
         )
         return [dict(row) for row in cursor.fetchall()]
 
-    def delete_sessions(self, session_ids: List[str]) -> None:
+    def delete_sessions(self, session_ids: List[str], user_id: str) -> None:
         cursor = self.conn.cursor()
-        cursor.execute(
-            """
-        DELETE FROM sessions WHERE id IN ({})
-        """.format(",".join("?" * len(session_ids))),
-            session_ids,
-        )
-        cursor.execute(
-            """
-        DELETE FROM messages WHERE session_id IN ({})
-        """.format(",".join("?" * len(session_ids))),
-            session_ids,
-        )
+        
+        # 先验证这些会话是否属于该用户
+        cursor.execute(f"""
+            SELECT id FROM sessions 
+            WHERE id IN ({','.join('?'*len(session_ids))}) 
+            AND user_id = ?
+        """, (*session_ids, user_id))
+        
+        valid_ids = [row[0] for row in cursor.fetchall()]
+        if len(valid_ids) != len(session_ids):
+            raise ValueError("Some sessions do not belong to the user")
+        
+        cursor.execute(f"""
+            DELETE FROM sessions 
+            WHERE id IN ({','.join('?'*len(valid_ids))})
+        """, valid_ids)
+        
+        cursor.execute(f"""
+            DELETE FROM messages 
+            WHERE session_id IN ({','.join('?'*len(valid_ids))})
+        """, valid_ids)
+        
         self.conn.commit()
 
     def close(self):
+        
         self.conn.close()

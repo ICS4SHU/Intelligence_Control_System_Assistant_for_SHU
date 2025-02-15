@@ -1,10 +1,11 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
-from models import User, UserCreate, UserLogin, Token, Database, SECRET_KEY, ALGORITHM, ACCESS_TOKEN_EXPIRE_MINUTES, pwd_context
 from datetime import datetime, timedelta
 import uuid
 import jwt
 from jwt import PyJWTError
+
+from ..models import User, UserCreate, UserLogin, Token, Database, SECRET_KEY, ALGORITHM, ACCESS_TOKEN_EXPIRE_MINUTES, pwd_context
 
 router = APIRouter()
 

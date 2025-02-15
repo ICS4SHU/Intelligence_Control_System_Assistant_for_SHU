@@ -2,7 +2,7 @@ from typing import Dict
 import aiohttp
 from fastapi import HTTPException, Security, Depends
 from fastapi.security import APIKeyHeader
-from auth import get_current_user  # 从 auth.py 导入验证用户的函数
+from backend.routers.auth import get_current_user  # 从 auth.py 导入验证用户的函数
 
 from .config import API_KEY, API_BASE_URL
 

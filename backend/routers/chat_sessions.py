@@ -1,61 +1,72 @@
+from typing import List
 from fastapi import APIRouter, Depends, HTTPException
-from models import Session, DeleteSessions, Database
-from dependencies import verify_api_key, forward_request, get_current_user_from_token
-from auth import oauth2_scheme
+
+from ..models import SessionCreate, SessionUpdate, DeleteSessions, Database
+from ..dependencies import verify_api_key, forward_request, get_current_user_from_token
+from .auth import oauth2_scheme
 
 router = APIRouter()
 
 @router.post("/sessions")
 async def create_session(
-    chat_id: str, session: Session, user: dict = Depends(get_current_user_from_token)
+    session_data: SessionCreate,
+    user: dict = Depends(get_current_user_from_token)
 ):
+    db = Database()
     try:
-        # 获取当前用户信息
-        current_user = user
-
-        # 将会话与用户ID关联
-        db = Database()
-        db.save_session(session, current_user.id)
-
-        # 转发请求到外部服务
-        response = await forward_request(
-            "POST",
-            f"/api/v1/chats/{chat_id}/sessions",
-            json_data={"name": session.name},
-            api_key=api_key,
-        )
-        return response
-    except Exception as e:
-        return {"code": 500, "message": str(e)}
+        # 确保用户只能为自己创建会话
+        if session_data.user_id != user.id:
+            raise HTTPException(status_code=403, detail="Cannot create session for another user")
+        
+        session = db.create_session(session_data)
+        return session
     finally:
         db.close()
 
 
-@router.get("/sessions")
-async def get_sessions(
-    chat_id: str,
-    page: int = 1,
-    page_size: int = 30,
-    orderby: str = "create_time",
-    desc: bool = True,
-    user: dict = Depends(get_current_user_from_token)  # 使用get_current_user_from_token
+@router.put("/sessions/{session_id}")
+async def update_session(
+    session_id: str,
+    update_data: SessionUpdate,
+    user: dict = Depends(get_current_user_from_token)
 ):
-    # 获取当前用户信息
-    current_user = user
-
     db = Database()
     try:
-        # 根据用户ID查询属于该用户的会话
-        cursor = db.conn.cursor()
-        cursor.execute("""
-            SELECT id, name, created_at, updated_at
-            FROM sessions
-            WHERE user_id = ?
-            ORDER BY ? DESC
-            LIMIT ? OFFSET ?
-        """, (current_user.id, orderby, page_size, (page-1)*page_size))
+        updated_session = db.update_session(session_id, user.id, update_data)
+        if not updated_session:
+            raise HTTPException(status_code=404, detail="Session not found or no changes made")
+        return updated_session
+    finally:
+        db.close()
 
-        sessions = cursor.fetchall()
+@router.post("/sessions/{session_id}/archive")
+async def archive_session(
+    session_id: str,
+    user: dict = Depends(get_current_user_from_token)
+):
+    db = Database()
+    try:
+        if not db.archive_session(session_id, user.id):
+            raise HTTPException(status_code=404, detail="Session not found")
+        return {"status": "success"}
+    finally:
+        db.close()
+
+@router.get("/sessions")
+async def get_sessions(
+    active_only: bool = True,
+    page: int = 1,
+    page_size: int = 30,
+    user: dict = Depends(get_current_user_from_token)
+):
+    db = Database()
+    try:
+        sessions = db.get_sessions(
+            user_id=user.id,
+            active_only=active_only,
+            page=page,
+            page_size=page_size
+        )
         return {"sessions": sessions}
     finally:
         db.close()
@@ -63,7 +74,8 @@ async def get_sessions(
 
 @router.delete("/sessions")
 async def delete_sessions(
-    chat_id: str, sessions: DeleteSessions, user: dict = Depends(get_current_user_from_token)
+    session_ids: List[str],
+    user: dict = Depends(get_current_user_from_token)
 ):
     try:
         # 获取当前用户信息
@@ -71,7 +83,7 @@ async def delete_sessions(
 
         # 确保每个会话都属于当前用户
         db = Database()
-        for session_id in sessions.ids:
+        for session_id in session_ids:
             cursor = db.conn.cursor()
             cursor.execute("""
                 SELECT * FROM sessions WHERE id = ? AND user_id = ?
@@ -84,13 +96,13 @@ async def delete_sessions(
                 )
 
         # 删除会话
-        db.delete_sessions(sessions.ids)
+        db.delete_sessions(session_ids)
 
         # 转发请求到外部服务
         response = await forward_request(
             "DELETE",
             f"/api/v1/chats/{chat_id}/sessions",
-            json_data={"ids": sessions.ids},
+            json_data={"ids": session_ids},
         )
         return response
     except Exception as e:
