@@ -24,7 +24,7 @@ const ChatInterface = () => {
   const chatEndRef = useRef(null);
 
   const uid = localStorage.getItem('userId');
-
+  console.log('Current UID:', uid);
   const scrollToBottom = () => {
     chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   };
@@ -61,6 +61,7 @@ const ChatInterface = () => {
   };
 
   const loadSessions = async () => {
+    console.log('Current UID:', uid);
     setIsLoading(true);
     try {
       const response = await axios.get(
@@ -146,7 +147,7 @@ const ChatInterface = () => {
     try {
       const response = await axios.post(
         `${API_BASE_URL}/api/v1/chats/${CHAT_ID}/sessions`,
-        { name: sessionName, user_id: uid },  // 传递uid给后端
+        { name: sessionName, uid: uid },  // 传递uid给后端
         { headers: { Authorization: `Bearer ${API_KEY}` } }
       );
 

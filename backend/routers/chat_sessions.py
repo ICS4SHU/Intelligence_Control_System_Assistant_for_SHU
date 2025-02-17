@@ -2,15 +2,19 @@ from fastapi import APIRouter, Depends, HTTPException
 from models import Session, DeleteSessions, Database
 from dependencies import verify_api_key, forward_request, get_current_user_from_token
 from auth import oauth2_scheme
+from fastapi import Query
 
 router = APIRouter()
 @router.post("/sessions")
 async def create_session(
-    chat_id: str, session: Session, user: dict = Depends(get_current_user_from_token)  # 获取当前用户信息
+    chat_id: str, 
+    session: Session, 
+    user: dict = Depends(get_current_user_from_token)  # 获取当前用户信息
 ):
     try:
         current_user = user  # 获取当前用户
-        user_id = current_user.id  # 获取当前用户的uid
+      #  user_id = current_user.id  # 获取当前用户的uid
+        user_id = session.uid
 
         db = Database()
         # 保存会话时，确保会话与当前用户绑定
@@ -37,7 +41,8 @@ async def get_sessions(
     page_size: int = 30,
     orderby: str = "create_time",
     desc: bool = True,
-    user_id: str = Depends(get_current_user_from_token)  # 获取当前用户的uid
+    #user_id: str = Depends(get_current_user_from_token)  # 获取当前用户的uid
+    user_id: str = Query(...)  # 从查询参数中直接接收 user_id
 ):
     db = Database()
     try:
@@ -65,7 +70,8 @@ async def delete_sessions(
 ):
     try:
         current_user = user  # 获取当前用户信息
-        user_id = current_user.id  # 获取当前用户的uid
+        #user_id = current_user.id  # 获取当前用户的uid
+        user_id = sessions.uid
 
         db = Database()
         for session_id in sessions.ids:
