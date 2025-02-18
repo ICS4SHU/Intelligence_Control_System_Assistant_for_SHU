@@ -207,7 +207,23 @@ class Database:
             ),
         )
         self.conn.commit()
-
+    def get_all_users(self) -> list:
+        cursor = self.conn.cursor()
+        cursor.execute("SELECT * FROM users")
+        
+        # 获取列名
+        columns = [description[0] for description in cursor.description]
+        
+        # 使用列名和行数据构造字典
+        users = [dict(zip(columns, row)) for row in cursor.fetchall()]
+        
+        return users
+    def get_all_sessions(self) -> List[Dict[str, Any]]:
+        cursor = self.conn.cursor()
+        cursor.execute("SELECT * FROM sessions")
+        return [dict(row) for row in cursor.fetchall()]   
+    
+    
     def get_sessions(
         self,
         user_id: str,
