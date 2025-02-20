@@ -3,7 +3,7 @@ from fastapi import APIRouter, Depends, HTTPException
 
 from ..models.db import Database
 from ..models.session import SessionCreate, SessionUpdate
-from ..dependencies import verify_api_key, forward_request
+
 from ..config import CHAT_ID
 
 router = APIRouter()
@@ -21,7 +21,7 @@ async def create_session(
             json_data={"name": session_data.name, "user_id": session_data.user_id},
             api_key=api_key,
         )
-        return response  
+        return response
     finally:
         db.close()
 

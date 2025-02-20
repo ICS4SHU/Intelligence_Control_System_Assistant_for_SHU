@@ -1,21 +1,37 @@
-import React, { useState, useRef, useEffect } from 'react';
-import { Send, Plus, MessageSquare, History, Bookmark, Copy, Trash2, Loader2, Star } from 'lucide-react';
-import ReactMarkdown from 'react-markdown';
-import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
-import { vscDarkPlus } from 'react-syntax-highlighter/dist/esm/styles/prism';
-import axios from 'axios';
+import React, { useState, useRef, useEffect } from "react";
+import {
+  Send,
+  Plus,
+  MessageSquare,
+  History,
+  Bookmark,
+  Copy,
+  Trash2,
+  Loader2,
+  Star,
+} from "lucide-react";
+import ReactMarkdown from "react-markdown";
+import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
+import { vscDarkPlus } from "react-syntax-highlighter/dist/esm/styles/prism";
+import axios from "axios";
 
 // API Configuration
-const API_BASE_URL = 'http://223.4.250.237';
-const API_KEY = 'ragflow-E0ZmY5M2E4YmM1MjExZWY4ZWNlMDI0Mm';
-const CHAT_ID = 'fe9beac2bc2311efb9e60242ac120006';
-const FAVORITE_USER_ID = 'favorite_user';
+const API_BASE_URL = "http://223.4.250.237";
+const API_KEY = "ragflow-E0ZmY5M2E4YmM1MjExZWY4ZWNlMDI0Mm";
+const CHAT_ID = "fe9beac2bc2311efb9e60242ac120006";
+const AGENT_ID = {
+  作业助手: "b76b2488ef6311efb3cf0242ac120006",
+  智能助手: "e7074ec2eace11ef8da20242ac120003",
+  考试助手: "d8214c5ee7aa11efa80f0242ac120003",
+  复习助手: "e3cfde42ed1a11ef9f240242ac120006",
+};
+const FAVORITE_USER_ID = "favorite_user";
 
 const ChatInterface = () => {
   const [conversations, setConversations] = useState([]);
   const [currentConversationId, setCurrentConversationId] = useState(null);
   const [currentConversation, setCurrentConversation] = useState(null);
-  const [inputValue, setInputValue] = useState('');
+  const [inputValue, setInputValue] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [isSending, setIsSending] = useState(false);
   const [showFavorites, setShowFavorites] = useState(false);
@@ -23,7 +39,7 @@ const ChatInterface = () => {
   const chatEndRef = useRef(null);
 
   const scrollToBottom = () => {
-    chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
   };
 
   useEffect(() => {
@@ -44,8 +60,8 @@ const ChatInterface = () => {
           params: {
             page: 1,
             page_size: 30,
-            user_id: FAVORITE_USER_ID
-          }
+            user_id: FAVORITE_USER_ID,
+          },
         }
       );
 
@@ -53,7 +69,7 @@ const ChatInterface = () => {
         setFavorites(response.data.data);
       }
     } catch (error) {
-      console.error('Error loading favorites:', error);
+      console.error("Error loading favorites:", error);
     }
   };
 
@@ -67,18 +83,18 @@ const ChatInterface = () => {
           params: {
             page: 1,
             page_size: 30,
-            orderby: 'update_time',
-            desc: true
-          }
+            orderby: "update_time",
+            desc: true,
+          },
         }
       );
 
       if (response.data.code === 0 && Array.isArray(response.data.data)) {
-        const sessionsWithMessages = response.data.data.map(session => ({
+        const sessionsWithMessages = response.data.data.map((session) => ({
           id: session.id,
           name: session.name,
           messages: session.messages || [],
-          user_id: session.user_id
+          user_id: session.user_id,
         }));
         setConversations(sessionsWithMessages);
 
@@ -87,15 +103,15 @@ const ChatInterface = () => {
         }
       }
     } catch (error) {
-      console.error('Error loading sessions:', error);
+      console.error("Error loading sessions:", error);
     } finally {
       setIsLoading(false);
     }
   };
 
   const toggleFavorite = async (messageId) => {
-    const session = conversations.find(conv =>
-      conv.messages.some(msg => msg.id === messageId)
+    const session = conversations.find((conv) =>
+      conv.messages.some((msg) => msg.id === messageId)
     );
 
     if (!session) return;
@@ -107,26 +123,28 @@ const ChatInterface = () => {
         `${API_BASE_URL}/api/v1/chats/${CHAT_ID}/sessions/${session.id}`,
         {
           name: session.name,
-          user_id: isFavorite ? '' : FAVORITE_USER_ID
+          user_id: isFavorite ? "" : FAVORITE_USER_ID,
         },
         { headers: { Authorization: `Bearer ${API_KEY}` } }
       );
 
-      const updatedConversations = conversations.map(conv =>
+      const updatedConversations = conversations.map((conv) =>
         conv.id === session.id
-          ? { ...conv, user_id: isFavorite ? '' : FAVORITE_USER_ID }
+          ? { ...conv, user_id: isFavorite ? "" : FAVORITE_USER_ID }
           : conv
       );
       setConversations(updatedConversations);
       loadFavorites();
     } catch (error) {
-      console.error('Error toggling favorite:', error);
+      console.error("Error toggling favorite:", error);
     }
   };
 
   const switchSession = (sessionId) => {
     if (sessionId === currentConversationId) return;
-    const targetSession = [...conversations, ...favorites].find(conv => conv.id === sessionId);
+    const targetSession = [...conversations, ...favorites].find(
+      (conv) => conv.id === sessionId
+    );
     if (targetSession) {
       setCurrentConversationId(sessionId);
       setCurrentConversation(targetSession);
@@ -134,7 +152,7 @@ const ChatInterface = () => {
   };
 
   const createNewSession = async () => {
-    const sessionName = prompt('请输入会话名称:');
+    const sessionName = prompt("请输入会话名称:");
     if (!sessionName) return;
 
     try {
@@ -149,13 +167,13 @@ const ChatInterface = () => {
           id: response.data.data.id,
           name: sessionName,
           messages: response.data.data.messages || [],
-          user_id: ''
+          user_id: "",
         };
-        setConversations(prev => [newSession, ...prev]);
+        setConversations((prev) => [newSession, ...prev]);
         switchSession(newSession.id);
       }
     } catch (error) {
-      console.error('Error creating session:', error);
+      console.error("Error creating session:", error);
     }
   };
 
@@ -163,51 +181,55 @@ const ChatInterface = () => {
     if (!inputValue.trim() || !currentConversationId || isSending) return;
 
     setIsSending(true);
-    const userMessage = { role: 'user', content: inputValue };
-    const assistantMessage = { role: 'assistant', content: '' };
+    const userMessage = { role: "user", content: inputValue };
+    const assistantMessage = { role: "assistant", content: "" };
 
     const updatedSession = {
       ...currentConversation,
-      messages: [...currentConversation.messages, userMessage, assistantMessage]
+      messages: [
+        ...currentConversation.messages,
+        userMessage,
+        assistantMessage,
+      ],
     };
     setCurrentConversation(updatedSession);
-    setConversations(prev =>
-      prev.map(conv =>
+    setConversations((prev) =>
+      prev.map((conv) =>
         conv.id === currentConversationId ? updatedSession : conv
       )
     );
-    setInputValue('');
+    setInputValue("");
 
     try {
       const response = await fetch(
         `${API_BASE_URL}/api/v1/chats/${CHAT_ID}/completions`,
         {
-          method: 'POST',
+          method: "POST",
           headers: {
-            'Content-Type': 'application/json',
-            Authorization: `Bearer ${API_KEY}`
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${API_KEY}`,
           },
           body: JSON.stringify({
             question: userMessage.content,
             stream: true,
-            session_id: currentConversationId
-          })
+            session_id: currentConversationId,
+          }),
         }
       );
 
       const reader = response.body.getReader();
       const decoder = new TextDecoder();
-      let assistantResponse = '';
+      let assistantResponse = "";
 
       while (true) {
         const { done, value } = await reader.read();
         if (done) break;
 
         const chunk = decoder.decode(value);
-        const lines = chunk.split('\n');
+        const lines = chunk.split("\n");
 
         for (const line of lines) {
-          if (line.startsWith('data:')) {
+          if (line.startsWith("data:")) {
             try {
               const data = JSON.parse(line.slice(5));
               if (data.code === 0) {
@@ -219,32 +241,36 @@ const ChatInterface = () => {
                     ...currentConversation,
                     messages: [
                       ...currentConversation.messages.slice(0, -1),
-                      { role: 'assistant', content: assistantResponse, id: data.data.id }
-                    ]
+                      {
+                        role: "assistant",
+                        content: assistantResponse,
+                        id: data.data.id,
+                      },
+                    ],
                   };
                   setCurrentConversation(updatedSession);
-                  setConversations(prev =>
-                    prev.map(conv =>
+                  setConversations((prev) =>
+                    prev.map((conv) =>
                       conv.id === currentConversationId ? updatedSession : conv
                     )
                   );
                 }
               }
             } catch (e) {
-              console.error('Error parsing stream data:', e);
+              console.error("Error parsing stream data:", e);
             }
           }
         }
       }
     } catch (error) {
-      console.error('Error sending message:', error);
+      console.error("Error sending message:", error);
     } finally {
       setIsSending(false);
     }
   };
 
   const handleKeyPress = (e) => {
-    if (e.key === 'Enter' && !e.shiftKey) {
+    if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
       sendMessage();
     }
@@ -275,7 +301,10 @@ const ChatInterface = () => {
           <div className="mx-4 my-3">
             {showFavorites ? (
               <>
-                <button className="w-full text-left text-lg mb-2" onClick={() => setShowFavorites(false)}>
+                <button
+                  className="w-full text-left text-lg mb-2"
+                  onClick={() => setShowFavorites(false)}
+                >
                   所有会话
                 </button>
                 <ul className="space-y-2">
@@ -292,7 +321,10 @@ const ChatInterface = () => {
               </>
             ) : (
               <>
-                <button className="w-full text-left text-lg mb-2" onClick={() => setShowFavorites(true)}>
+                <button
+                  className="w-full text-left text-lg mb-2"
+                  onClick={() => setShowFavorites(true)}
+                >
                   收藏会话
                 </button>
                 <ul className="space-y-2">
@@ -317,7 +349,9 @@ const ChatInterface = () => {
         {/* Chat Header */}
         <div className="px-5 py-4 border-b border-gray-300 flex justify-between items-center">
           {currentConversation ? (
-            <h2 className="text-2xl font-semibold">{currentConversation.name}</h2>
+            <h2 className="text-2xl font-semibold">
+              {currentConversation.name}
+            </h2>
           ) : (
             <h2 className="text-2xl font-semibold">请选择会话</h2>
           )}
@@ -327,26 +361,44 @@ const ChatInterface = () => {
         <div className="flex-1 p-5 overflow-y-auto">
           <div className="space-y-4">
             {currentConversation?.messages.map((message, idx) => (
-              <div key={idx} className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}>
+              <div
+                key={idx}
+                className={`flex ${
+                  message.role === "user" ? "justify-end" : "justify-start"
+                }`}
+              >
                 <div
                   className={`px-4 py-2 max-w-[70%] rounded-lg ${
-                    message.role === 'user' ? 'bg-blue-500 text-white' : 'bg-gray-200'
+                    message.role === "user"
+                      ? "bg-blue-500 text-white"
+                      : "bg-gray-200"
                   }`}
                 >
                   <ReactMarkdown
                     components={{
-                      code: ({ node, inline, className, children, ...props }) => {
-                        const match = /language-(\w+)/.exec(className || '');
+                      code: ({
+                        node,
+                        inline,
+                        className,
+                        children,
+                        ...props
+                      }) => {
+                        const match = /language-(\w+)/.exec(className || "");
                         return !inline && match ? (
-                          <SyntaxHighlighter style={vscDarkPlus} language={match[1]} PreTag="div" {...props}>
-                            {String(children).replace(/\n$/, '')}
+                          <SyntaxHighlighter
+                            style={vscDarkPlus}
+                            language={match[1]}
+                            PreTag="div"
+                            {...props}
+                          >
+                            {String(children).replace(/\n$/, "")}
                           </SyntaxHighlighter>
                         ) : (
                           <code className={className} {...props}>
                             {children}
                           </code>
                         );
-                      }
+                      },
                     }}
                   >
                     {message.content}

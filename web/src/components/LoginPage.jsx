@@ -1,14 +1,14 @@
-import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import axios from 'axios';
-import '../css/LoginPage.css'; // 导入CSS文件
+import React, { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import axios from "axios";
+import "../css/LoginPage.css"; // 导入CSS文件
 
-const API_BASE_URL = 'http://127.0.0.1:8000'; // 直接在代码中设置 API 地址
+const API_BASE_URL = "http://127.0.0.1:8000"; // 直接在代码中设置 API 地址
 
 const LoginPage = ({ onLogin }) => {
-  const [loginId, setLoginId] = useState('');
-  const [password, setPassword] = useState('');
-  const [error, setError] = useState('');
+  const [loginId, setLoginId] = useState("");
+  const [password, setPassword] = useState("");
+  const [error, setError] = useState("");
   const navigate = useNavigate();
 
   const handleLogin = async (e) => {
@@ -20,17 +20,33 @@ const LoginPage = ({ onLogin }) => {
     }
 
     try {
-      const response = await axios.post(`${API_BASE_URL}/api/v1/auth/login`, { login_id: loginId, password });
-      if (response.data.access_token) {
-        localStorage.setItem('userToken', response.data.access_token); // 保存 token 到 localStorage
-        onLogin(response.data.access_token); // 传递 token 到父组件
-        navigate('/chat'); // 登录成功后跳转到聊天页面
+      const response = await axios.post(`${API_BASE_URL}/api/v1/auth/login`, {
+        login_id: loginId,
+        password,
+      });
+
+      if (response.data.user_id) {
+        // 保存登录响应数据到 localStorage
+        localStorage.setItem(
+          "userData",
+          JSON.stringify({
+            userId: response.data.user_id,
+            assistantSessions: response.data.assistantsession_ids,
+            agentSessions: response.data.agentsession_ids,
+          })
+        );
+
+        // 传递数据给父组件
+        onLogin(response.data);
+
+        // 跳转到聊天页面
+        navigate("/chat");
       } else {
-        setError('登录失败，请检查用户名/学号或密码');
+        setError("登录失败，请检查用户名/学号或密码");
       }
     } catch (error) {
-      setError('登录失败，请稍后再试');
-      console.error('登录失败', error);
+      setError("登录失败，请稍后再试");
+      console.error("登录失败", error);
     }
   };
 
@@ -58,10 +74,15 @@ const LoginPage = ({ onLogin }) => {
               required
             />
           </div>
-          <button type="submit" className="login-button">Login</button>
+          <button type="submit" className="login-button">
+            Login
+          </button>
         </form>
 
-        <button onClick={() => navigate('/register')} className="register-button">
+        <button
+          onClick={() => navigate("/register")}
+          className="register-button"
+        >
           Go to Register
         </button>
       </div>
