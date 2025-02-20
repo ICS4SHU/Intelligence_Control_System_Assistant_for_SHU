@@ -3,11 +3,9 @@ from typing import List, Optional
 from datetime import datetime
 
 
-
-
 class SessionCreate(BaseModel):
     name: str
-    user_id: str
+    user_id: Optional[str] = None
     
 class SessionUpdate(BaseModel):
     name: Optional[str] = None
