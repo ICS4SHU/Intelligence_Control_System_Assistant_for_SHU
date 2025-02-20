@@ -30,6 +30,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+app.include_router(agent_sessions.router, prefix="/api/v1/chats/{chat_id}")
 app.include_router(assistant_sessions.router, prefix="/api/v1/chats/{chat_id}")
 app.include_router(completions.router, prefix="/api/v1/chats/{chat_id}")
 app.include_router(auth.router, prefix="/api/v1/auth")

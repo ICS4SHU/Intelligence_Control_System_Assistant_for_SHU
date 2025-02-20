@@ -16,11 +16,6 @@ async def create_session(
 ):
     db = Database()
     try:
-        # 确保用户只能为自己创建会话
-        if session_data.user_id != user.id:
-            raise HTTPException(status_code=403, detail="Cannot create session for another user")
-        
-        session = db.create_session(session_data)
         response = await forward_request(
             "POST",
             f"/api/v1/chats/{CHAT_ID}/sessions",
