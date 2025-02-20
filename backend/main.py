@@ -11,7 +11,7 @@ sys.path.append(str(Path(__file__).resolve().parent.parent))
 if __name__ == "__main__" and __package__ is None:
     __package__ = "backend"
 
-from .routers import chat_sessions, completions, auth
+from .routers import assistant_sessions, agent_sessions, completions, auth
 from .config import FRONTEND_ORIGIN
 
 
@@ -30,7 +30,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-app.include_router(chat_sessions.router, prefix="/api/v1/chats/{chat_id}")
+app.include_router(assistant_sessions.router, prefix="/api/v1/chats/{chat_id}")
 app.include_router(completions.router, prefix="/api/v1/chats/{chat_id}")
 app.include_router(auth.router, prefix="/api/v1/auth")
 

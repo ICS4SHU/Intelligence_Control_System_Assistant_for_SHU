@@ -1,8 +1,9 @@
 from typing import List
 from fastapi import APIRouter, Depends, HTTPException
 
-from ..models.db import SessionCreate, SessionUpdate, DeleteSessions, Database
-from ..dependencies import verify_api_key, verify_RAGFlow_api_key, forward_request, get_current_user_from_token
+from ..models.db import Database
+from ..models.session import SessionCreate, SessionUpdate
+from ..dependencies import verify_api_key, forward_request, get_current_user_from_token
 from .auth import oauth2_scheme
 from ..config import CHAT_ID
 
@@ -11,8 +12,7 @@ router = APIRouter()
 @router.post("/sessions")
 async def create_session(
     session_data: SessionCreate,
-    user: dict = Depends(get_current_user_from_token),
-    api_key: str = Depends(verify_RAGFlow_api_key),
+    api_key: str = Depends(verify_api_key),
 ):
     db = Database()
     try:

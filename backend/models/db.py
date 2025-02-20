@@ -5,9 +5,9 @@ from typing import List, Optional, Dict, Any
 from datetime import datetime
 from passlib.context import CryptContext
 
-from .user_model import User
-from .session_model import Session, SessionCreate, SessionUpdate
-from .message_model import Message
+from .user import User
+from .session import Session, SessionCreate, SessionUpdate
+from .message import Message
 
 
 # JWT配置
