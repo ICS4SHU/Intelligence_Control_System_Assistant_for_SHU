@@ -1,7 +1,7 @@
 from fastapi import HTTPException, status
 from datetime import datetime, timedelta
 import jwt
-from ..models import Database, SECRET_KEY, ALGORITHM
+from ..models.db import Database, SECRET_KEY, ALGORITHM
 
 class RAGFlowWrapper:
     def __init__(self, ragflow_token: str):

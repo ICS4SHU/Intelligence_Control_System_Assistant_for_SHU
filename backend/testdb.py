@@ -1,5 +1,5 @@
 from fastapi import APIRouter, Depends, HTTPException
-from .models import Session, DeleteSessions, Database
+from .models.db import Session, DeleteSessions, Database
 from .dependencies import verify_api_key, forward_request, get_current_user_from_token
 from .routers.auth import oauth2_scheme
 

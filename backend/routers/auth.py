@@ -5,7 +5,7 @@ import uuid
 import jwt
 from jwt import PyJWTError
 
-from ..models import User, UserCreate, UserLogin, Token, Database, SECRET_KEY, ALGORITHM, ACCESS_TOKEN_EXPIRE_MINUTES, pwd_context
+from ..models.db import User, UserCreate, UserLogin, Token, Database, SECRET_KEY, ALGORITHM, ACCESS_TOKEN_EXPIRE_MINUTES, pwd_context
 
 router = APIRouter()
 

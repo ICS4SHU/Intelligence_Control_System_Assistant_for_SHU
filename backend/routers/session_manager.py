@@ -1,7 +1,7 @@
 from datetime import datetime, timedelta
 import jwt
 from fastapi import HTTPException, status
-from ..models import Database, SECRET_KEY, ALGORITHM
+from ..models.db import Database, SECRET_KEY, ALGORITHM
 
 class SessionManager:
     def __init__(self, ragflow_token: str):

@@ -1,9 +1,14 @@
-import sqlite3
 import uuid
-from pydantic import BaseModel, field_validator, EmailStr
+import sqlite3
+
 from typing import List, Optional, Dict, Any
 from datetime import datetime
 from passlib.context import CryptContext
+
+from .user_model import User
+from .session_model import Session, SessionCreate, SessionUpdate
+from .message_model import Message
+
 
 # JWT配置
 SECRET_KEY = "your-secret-key-here"
@@ -11,64 +16,6 @@ ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 30
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
-
-class User(BaseModel):
-    id: str
-    username: Optional[str] = None
-    student_id: Optional[str] = None
-    email: str
-    hashed_password: str
-    created_at: datetime
-
-class UserCreate(BaseModel):
-    username: Optional[str] = None
-    student_id: Optional[str] = None
-    email: EmailStr
-    password: str
-
-    
-    @field_validator('password')
-    def password_must_be_strong(cls, v):
-        if len(v) < 8:
-            raise ValueError('Password must be at least 8 characters long')
-        return v
-
-class UserLogin(BaseModel):
-    login_id: str  # 可以是username或student_id
-    password: str
-
-class Token(BaseModel):
-    access_token: str
-    token_type: str
-
-# 数据模型
-class Message(BaseModel):
-    question: str
-    answer: Optional[str] = None
-    session_id: Optional[str] = None
-    user_id: Optional[str] = None  # 新增 user_id 字段
-    stream: bool = True
-
-
-class Session(BaseModel):
-    id: str
-    name: str
-    user_id: str
-    created_at: datetime
-    updated_at: datetime
-    is_active: bool = True
-
-class SessionCreate(BaseModel):
-    name: str
-    user_id: str
-    
-class SessionUpdate(BaseModel):
-    name: Optional[str] = None
-    is_active: Optional[bool] = None
-
-
-class DeleteSessions(BaseModel):
-    ids: List[str]
 
 
 class Database:

@@ -6,7 +6,7 @@ from starlette.config import Config
 from fastapi.responses import StreamingResponse
 from fastapi import APIRouter, Depends, HTTPException
 
-from ..models import Message, Database
+from ..models.db import Message, Database
 from ..dependencies import verify_api_key, get_current_user_from_token  # 引入get_current_user_from_token
 
 router = APIRouter()

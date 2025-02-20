@@ -3,7 +3,7 @@ from fastapi.testclient import TestClient
 from sqlite3 import IntegrityError
 
 from ..main import app  # 假设您的FastAPI应用在main.py中
-from ..models import Database
+from ..models.db import Database
 from ..routers.auth import create_access_token
 
 client = TestClient(app)
