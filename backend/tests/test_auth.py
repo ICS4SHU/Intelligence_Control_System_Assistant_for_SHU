@@ -4,7 +4,6 @@ from sqlite3 import IntegrityError
 
 from ..main import app  # 假设您的FastAPI应用在main.py中
 from ..models.db import Database
-from ..routers.auth import create_access_token
 
 client = TestClient(app)
 
@@ -43,36 +42,36 @@ def test_user_registration_success(test_db):
     print("Response body:", response.json())
     assert response.status_code == 200
 
-# def test_user_registration_case_sensitive_email(test_db):
-#     # 确保数据库为空
-#     cursor = test_db.conn.cursor()
-#     cursor.execute("SELECT COUNT(*) FROM users")
-#     assert cursor.fetchone()[0] == 0
+def test_user_registration_case_sensitive_email(test_db):
+    # 确保数据库为空
+    cursor = test_db.conn.cursor()
+    cursor.execute("SELECT COUNT(*) FROM users")
+    assert cursor.fetchone()[0] == 0
 
-#     # 使用唯一测试数据
-#     base_email = "test+" + str(hash("test_user_registration_case_sensitive_email")) + "@example.com"
+    # 使用唯一测试数据
+    base_email = "test+" + str(hash("test_user_registration_case_sensitive_email")) + "@example.com"
     
-#     user_data1 = {
-#         "username": "testuser7",
-#         "email": base_email.lower(),
-#         "password": "securepassword123"
-#     }
-#     user_data2 = {
-#         "username": "testuser8",
-#         "email": base_email.upper(),
-#         "password": "securepassword123"
-#     }
+    user_data1 = {
+        "username": "testuser7",
+        "email": base_email.lower(),
+        "password": "securepassword123"
+    }
+    user_data2 = {
+        "username": "testuser8",
+        "email": base_email.upper(),
+        "password": "securepassword123"
+    }
 
-#     # 注册第一个用户
-#     response1 = client.post("/api/v1/auth/register", json=user_data1)
-#     print("First registration response:", response1.status_code, response1.json())
-#     assert response1.status_code == 200
+    # 注册第一个用户
+    response1 = client.post("/api/v1/auth/register", json=user_data1)
+    print("First registration response:", response1.status_code, response1.json())
+    assert response1.status_code == 200
 
-#     # 尝试注册第二个用户
-#     response2 = client.post("/api/v1/auth/register", json=user_data2)
-#     print("Second registration response:", response2.status_code, response2.json())
-#     assert response2.status_code == 400
-#     assert "Email already registered" in response2.json()["detail"]
+    # 尝试注册第二个用户
+    response2 = client.post("/api/v1/auth/register", json=user_data2)
+    print("Second registration response:", response2.status_code, response2.json())
+    assert response2.status_code == 400
+    assert "Email already registered" in response2.json()["detail"]
     
 def test_user_registration_duplicate_email(test_db):
     cursor = test_db.conn.cursor()
