@@ -29,6 +29,15 @@ def create_access_token(data: dict, expires_delta: timedelta = None):
     encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
     return encoded_jwt
 
+def validate_token(token: str) -> bool:
+    try:
+        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+        return True
+    except jwt.ExpiredSignatureError:
+        raise "Token has expired"
+    except jwt.InvalidTokenError:
+        raise "Invalid token"
+    
 # 获取当前用户
 async def get_current_user(token: str = Depends(oauth2_scheme)):
     credentials_exception = HTTPException(

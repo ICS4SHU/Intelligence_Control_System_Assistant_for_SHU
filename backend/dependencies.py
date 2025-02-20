@@ -2,20 +2,28 @@ from typing import Dict
 import aiohttp
 from fastapi import HTTPException, Security, Depends
 from fastapi.security import APIKeyHeader
-from backend.routers.auth import get_current_user  # 从 auth.py 导入验证用户的函数
 
+from backend.routers.auth import get_current_user, validate_token  # 从 auth.py 导入验证用户的函数
 from .config import API_KEY, API_BASE_URL
 
 # API Key 验证
 API_KEY_HEADER = APIKeyHeader(name="Authorization")
 
 
-async def verify_api_key(api_key: str = Security(API_KEY_HEADER)):
+async def verify_RAGFlow_api_key(api_key: str = Security(API_KEY_HEADER)):
     if not api_key.startswith("Bearer "):
         raise HTTPException(status_code=401, detail="Invalid API key format")
     key = api_key.split(" ")[1]
     if key != API_KEY:
-        raise HTTPException(status_code=401, detail="Invalid API key")
+        raise HTTPException(status_code=401, detail="Invalid RAGFlow API key")
+    return key
+
+async def verify_api_key(api_key: str = Security(API_KEY_HEADER)):
+    if not api_key.startswith("Bearer "):
+        raise HTTPException(status_code=401, detail="Invalid API key format")
+    key = api_key.split(" ")[1]
+    if not validate_token(key):
+        raise HTTPException(status_code=401, detail="Invalid User API key")    
     return key
 
 

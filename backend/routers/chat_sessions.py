@@ -4,6 +4,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from ..models import SessionCreate, SessionUpdate, DeleteSessions, Database
 from ..dependencies import verify_api_key, forward_request, get_current_user_from_token
 from .auth import oauth2_scheme
+from ..config import CHAT_ID
 
 router = APIRouter()
 
@@ -19,7 +20,7 @@ async def create_session(
             raise HTTPException(status_code=403, detail="Cannot create session for another user")
         
         session = db.create_session(session_data)
-        return session
+        return session  
     finally:
         db.close()
 
@@ -101,7 +102,7 @@ async def delete_sessions(
         # 转发请求到外部服务
         response = await forward_request(
             "DELETE",
-            f"/api/v1/chats/{chat_id}/sessions",
+            f"/api/v1/chats/{CHAT_ID}/sessions",
             json_data={"ids": session_ids},
         )
         return response

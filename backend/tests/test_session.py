@@ -2,6 +2,7 @@ import pytest
 from fastapi.testclient import TestClient
 from ..main import app
 from ..models import Database
+from ..config import API_KEY, CHAT_ID
 
 client = TestClient(app)
 
@@ -74,18 +75,18 @@ def test_create_session_for_different_users(test_db):
     # 为每个用户创建会话
     session_data1 = {"name": "Test Session", "user_id": user1["username"]}
     session_data2 = {"name": "Test Session", "user_id": user2["username"]}
-    headers1 = {"Authorization": f"Bearer {token1}"}
-    headers2 = {"Authorization": f"Bearer {token2}"}
+    headers1 = {"Authorization": f"Bearer {API_KEY}"}
+    headers2 = {"Authorization": f"Bearer {API_KEY}"}
 
     # 用户1创建会话
-    response1 = client.post("/api/v1/chats/{chat_id}/sessions", json=session_data1)
+    response1 = client.post(f"/api/v1/chats/{CHAT_ID}/sessions", json=session_data1, headers=headers1)
     print("Create session response:", response1.status_code, response1.json())
     
     assert response1.status_code == 200
     session_id1 = response1.json()["id"]
 
     # 用户2创建会话
-    response2 = client.post("/api/v1/chats/{chat_id}/sessions", json=session_data2, headers=headers2)
+    response2 = client.post(f"/api/v1/chats/{CHAT_ID}/sessions", json=session_data2, headers=headers2)
     assert response2.status_code == 200
     session_id2 = response2.json()["id"]
 
