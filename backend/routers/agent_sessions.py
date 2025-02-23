@@ -1,4 +1,5 @@
 from typing import List
+from pydantic import Optional
 from fastapi import APIRouter, Depends, HTTPException
 
 from ..models.db import Database
@@ -12,13 +13,14 @@ router = APIRouter()
 async def create_session(
     session_data: SessionCreate,
     api_key: str = Depends(verify_api_key),
-):
+    user_id: Optional[str] = None,
+) -> dict:
     db = Database()
     try:
         response = await forward_request(
             "POST",
             f"/api/v1/chats/{AgentID.HOMEWORK}/sessions",
-            json_data={"name": session_data.name, "user_id": session_data.user_id},
+            json_data={"name": session_data.name, "user_id": user_id},
             api_key=api_key,
         )
         return response

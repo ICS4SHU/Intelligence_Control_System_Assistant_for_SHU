@@ -21,8 +21,6 @@ def get_password_hash(password: str):
 # 新增响应模型
 class LoginResponse(BaseModel):
     user_id: str
-    assistantsession_ids: List[str]
-    agentsession_ids: List[str]
 
 # 注册接口（保持不变）
 @router.post("/register", response_model=User)
