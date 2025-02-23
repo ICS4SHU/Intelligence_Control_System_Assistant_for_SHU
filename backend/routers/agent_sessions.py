@@ -4,7 +4,7 @@ from fastapi import APIRouter, Depends, HTTPException
 
 from ..models.db import Database
 from ..models.session import SessionCreate, SessionUpdate
-from ..dependencies import verify_api_key, forward_request
+from ..dependencies import verify_api_key, forward_request, get_current_user_from_token
 from ..config import AgentID
 
 router = APIRouter()
@@ -26,7 +26,7 @@ async def create_session(
         return response
     finally:
         db.close()
-        
+
 @router.put("/sessions/{session_id}")
 async def update_session(
     session_id: str,

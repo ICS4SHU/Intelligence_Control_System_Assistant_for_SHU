@@ -7,14 +7,14 @@ from fastapi.responses import StreamingResponse
 from fastapi import APIRouter, Depends, HTTPException
 
 from ..models.db import Message, Database
-from ..dependencies import verify_api_key
+from ..dependencies import verify_api_key #, get_current_user_from_token  # 引入get_current_user_from_token
 
 router = APIRouter()
-
 
 @router.post("/completions")
 async def create_completion(
     chat_id: str, message: Message,
+    user: dict = Depends(verify_api_key)  # 获取当前用户信息
 ):
     db = Database()
     try:

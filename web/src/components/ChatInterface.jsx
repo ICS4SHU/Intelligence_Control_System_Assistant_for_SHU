@@ -50,6 +50,9 @@ const ChatInterface = () => {
     loadSessions();
     loadFavorites();
   }, []);
+  // 从 localStorage 读取数据
+  const userData = JSON.parse(localStorage.getItem("userData"));
+  // userData {userId，assistantSessions，agentSessions} 使用 ${API_BASE_URL}/users/${userData.userId}
 
   const loadFavorites = async () => {
     try {

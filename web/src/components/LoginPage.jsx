@@ -31,8 +31,8 @@ const LoginPage = ({ onLogin }) => {
           "userData",
           JSON.stringify({
             userId: response.data.user_id,
-            assistantSessions: response.data.assistantsession_ids,
-            agentSessions: response.data.agentsession_ids,
+            assistantSessionsId: response.data.assistantsession_ids,
+            agentSessionsId: response.data.agentsession_ids,
           })
         );
 
