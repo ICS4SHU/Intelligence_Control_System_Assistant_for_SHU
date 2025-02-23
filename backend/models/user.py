@@ -16,7 +16,6 @@ class UserCreate(BaseModel):
     email: EmailStr
     password: str
 
-    
     @field_validator('password')
     def password_must_be_strong(cls, v):
         if len(v) < 8:

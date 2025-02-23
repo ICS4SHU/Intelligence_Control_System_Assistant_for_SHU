@@ -14,7 +14,7 @@ class SessionUpdate(BaseModel):
 class DeleteSessions(BaseModel):
     ids: List[str]
 
-class AssistantSession(BaseModel):
+class Session(BaseModel):
     id: str
     name: str
     user_id: str
@@ -22,11 +22,8 @@ class AssistantSession(BaseModel):
     updated_at: datetime
     is_active: bool = True
 
-class AgentSession(BaseModel):
-    id: str
-    name: str
-    user_id: str
-    created_at: datetime
-    updated_at: datetime
-    is_active: bool = True
-
+class AssistantSession(Session):
+    session_type: str = "assistant"
+        
+class AgentSession(Session):
+    session_type: str = "agent"
