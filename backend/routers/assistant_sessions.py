@@ -9,7 +9,7 @@ from ..config import CHAT_ID
 router = APIRouter()
 
 @router.post("/sessions")
-async def create_session(
+async def create_chat_session(
     session_data: SessionCreate,
     api_key: str = Depends(verify_api_key),
 ):
@@ -26,7 +26,7 @@ async def create_session(
 
 
 @router.put("/sessions/{session_id}")
-async def update_session(
+async def update_chat_session(
     session_id: str,
     update_data: SessionUpdate,
 ):
@@ -40,7 +40,7 @@ async def update_session(
         db.close()
 
 @router.post("/sessions/{session_id}/archive")
-async def archive_session(
+async def archive_chat_session(
     session_id: str,
 ):
     db = Database()
@@ -52,7 +52,7 @@ async def archive_session(
         db.close()
 
 @router.get("/sessions")
-async def get_sessions(
+async def get_chat_sessions(
     active_only: bool = True,
     page: int = 1,
     page_size: int = 30,
@@ -70,7 +70,7 @@ async def get_sessions(
 
 
 @router.delete("/sessions")
-async def delete_sessions(
+async def delete_chat_sessions(
     session_ids: List[str],
 ):
     try:

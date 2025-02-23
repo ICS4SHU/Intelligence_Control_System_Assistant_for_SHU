@@ -80,11 +80,11 @@ def test_create_session_for_different_users(test_db):
     headers2 = {"Authorization": f"Bearer {API_KEY}"}
 
     # breakpoint()
-    
+
     # 用户1创建会话
     response1 = client.post("/api/v1/chats/{chat_id}/sessions", json=session_data1, headers=headers1)
     print("Create session response:", response1.status_code, response1.json())
-    
+
     assert response1.status_code == 200
     session_id1 = response1.json()
 
@@ -95,14 +95,27 @@ def test_create_session_for_different_users(test_db):
 
     # 验证会话隔离
     # 用户1只能看到自己的会话
-    response = client.get("/api/v1/sessions", headers=headers1)
+    user1_json = {
+        "user_id": user1["username"],
+        "chat_id": CHAT_ID
+    }
+    print("Get user json:", user1_json)
+    response = client.get(f"/api/v1/users/{token1}/sessions", params=user1_json)
+    print("Get user response:", response.status_code, response.json())
+
+
+
     assert response.status_code == 200
     sessions = response.json()["sessions"]
     assert len(sessions) == 1
     assert sessions[0]["user_id"] == session_id1
 
     # 用户2只能看到自己的会话
-    response = client.get("/api/v1/sessions", headers=headers2)
+    get_user2_json = {
+        "user_id": user2["username"],
+        "chat_id": CHAT_ID
+    }
+    response = client.post(f"/api/v1/users/{token2}/sessions", params=get_user2_json)
     assert response.status_code == 200
     sessions = response.json()["sessions"]
     assert len(sessions) == 1
@@ -113,7 +126,7 @@ def test_create_session_for_different_users(test_db):
 #     cursor = test_db.conn.cursor()
 #     cursor.execute("SELECT COUNT(*) FROM users")
 #     assert cursor.fetchone()[0] == 0
-    
+
 #     # 创建两个测试用户
 #     # 创建两个测试用户
 #     user1 = {
@@ -147,14 +160,14 @@ def test_create_session_for_different_users(test_db):
 #     # 用户2尝试访问用户1的会话
 #     headers2 = {"Authorization": f"Bearer {token2}"}
 #     response = client.get(f"/api/v1/sessions/{session_id1}", headers=headers2)
-#     assert response.status_code == 404 
+#     assert response.status_code == 404
 
 # def test_session_archiving(test_db):
 #     # 确保数据库为空
 #     cursor = test_db.conn.cursor()
 #     cursor.execute("SELECT COUNT(*) FROM users")
 #     assert cursor.fetchone()[0] == 0
-    
+
 #     # 创建测试用户
 #     user = {
 #         "username": "string",

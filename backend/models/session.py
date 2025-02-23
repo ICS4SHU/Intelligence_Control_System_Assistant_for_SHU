@@ -5,7 +5,7 @@ from datetime import datetime
 
 class SessionCreate(BaseModel):
     name: str
-    user_id: Optional[str] = None
+    user_id: str = None
 
 class SessionUpdate(BaseModel):
     name: Optional[str] = None
@@ -24,6 +24,6 @@ class Session(BaseModel):
 
 class AssistantSession(Session):
     session_type: str = "assistant"
-        
+
 class AgentSession(Session):
     session_type: str = "agent"
