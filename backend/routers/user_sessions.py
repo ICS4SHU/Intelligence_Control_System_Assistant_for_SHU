@@ -1,8 +1,9 @@
 from fastapi import APIRouter, Depends, HTTPException
-from typing import Dict, Optional
+from typing import List, Optional
 
 from ..dependencies import verify_api_key, forward_request
 from .agent_sessions import create_agent_session
+from ..models.db import Database
 from ..models.user import User
 from ..models.session import SessionCreate
 
@@ -22,26 +23,25 @@ async def get_user_sessions(
     user_id: str,
     chat_id: Optional[str] = None,
     agent_id: Optional[str] = None,
-) -> Dict:
+) -> List:
+    db = Database()
+
     if chat_id is None and agent_id is None:
         raise HTTPException(status_code=400, detail="Chat ID or Agent ID is required")
 
     if not user_id:
         raise HTTPException(status_code=400, detail="User ID is required")
 
-    if chat_id is not None:
-        forward_response = await forward_request(
-            "GET",
-            f"/api/v1/chats/{chat_id}/sessions"
-        )
-    elif agent_id is not None:
-        forward_response = await forward_request(
-            "GET",
-            f"/api/v1/chats/{agent_id}/sessions"
-        )
+    try:
+        cursor = db.conn.cursor()
 
-    # for sessions in forward_request['data']:
-    #     if sessions['user_id'] != user_id:
-    #         forward_request['data'].remove(sessions)
+        if chat_id is not None:
+            cursor.execute("SELECT id FROM assistant_sessions WHERE user_id=?", (user_id,))
+        elif agent_id is not None:
+            cursor.execute("SELECT id FROM agent_sessions WHERE user_id=?", (user_id,))
 
-    return forward_response
+        sesssions_ids = cursor.fetchall()
+
+        return sesssions_ids
+    finally:
+        db.close()

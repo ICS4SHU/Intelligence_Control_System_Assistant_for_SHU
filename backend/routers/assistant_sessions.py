@@ -1,3 +1,4 @@
+from datetime import datetime
 from typing import List
 from fastapi import APIRouter, Depends, HTTPException
 
@@ -16,17 +17,39 @@ async def create_chat_session(
     db = Database()
     try:
         cursor = db.conn.cursor()
-        cursor.execute("SELECT * FROM users WHERE id=?", (session_data.user_id,))
-        if not cursor.fetchone():
-            raise HTTPException(status_code=400, detail="User not found")
+        # cursor.execute("SELECT * FROM users WHERE id=?", (session_data.user_id,))
+        # if not cursor.fetchone():
+        #     raise HTTPException(status_code=400, detail="User not found")
 
         response = await forward_request(
             "POST",
             f"/api/v1/chats/{CHAT_ID}/sessions",
             json_data={"name": session_data.name, "user_id": session_data.user_id},
         )
+        user_id = session_data.user_id
 
-        print("\n\nCreate session response:\n", response)
+        data = response.get("data")
+        id = data['id']
+        name = data['name']
+        create_date = datetime.strptime(data['create_date'], '%a, %d %b %Y %H:%M:%S GMT').strftime('%Y-%m-%d %H:%M:%S')
+        update_date = datetime.strptime(data['update_date'], '%a, %d %b %Y %H:%M:%S GMT').strftime('%Y-%m-%d %H:%M:%S')
+        is_active = True  # 默认值
+
+        sql = f"""
+                INSERT INTO assistant_sessions (id, name, user_id, created_at, updated_at, is_active)
+                VALUES (
+                    '{id}',
+                    '{name}',
+                    '{user_id}',
+                    '{create_date}',
+                    '{update_date}',
+                    {is_active}
+                );"""
+
+        cursor.execute(sql)
+        db.conn.commit()
+
+        response['data']['user_id'] = user_id
 
         return response
     finally:

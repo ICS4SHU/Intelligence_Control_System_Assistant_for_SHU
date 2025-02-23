@@ -69,13 +69,13 @@ def test_create_session_for_different_users(test_db):
     assert response2.status_code == 200
     print("response: ", response1.json())
     # 用户登录获取token
-    token1 = login_user(user1["username"], user1["password"])
-    print(token1)
-    token2 = login_user(user2["username"], user2["password"])
+    user1_id = login_user(user1["username"], user1["password"])
+    print("user1_id: ", user1_id)
+    user2_id = login_user(user2["username"], user2["password"])
 
     # 为每个用户创建会话
-    session_data1 = {"name": "Test Session", "user_id": user1["username"]}
-    session_data2 = {"name": "Test Session", "user_id": user2["username"]}
+    session_data1 = {"name": "Test Session", "user_id": user1_id}
+    session_data2 = {"name": "Test Session", "user_id": user2_id}
     headers1 = {"Authorization": f"Bearer {API_KEY}"}
     headers2 = {"Authorization": f"Bearer {API_KEY}"}
 
@@ -83,10 +83,10 @@ def test_create_session_for_different_users(test_db):
 
     # 用户1创建会话
     response1 = client.post("/api/v1/chats/{chat_id}/sessions", json=session_data1, headers=headers1)
-    print("Create session response:", response1.status_code, response1.json())
 
     assert response1.status_code == 200
     session_id1 = response1.json()
+    print("session_id1: ", session_id1)
 
     # 用户2创建会话
     response2 = client.post("/api/v1/chats/{chat_id}/sessions", json=session_data2, headers=headers2)
@@ -99,27 +99,28 @@ def test_create_session_for_different_users(test_db):
         "user_id": user1["username"],
         "chat_id": CHAT_ID
     }
-    print("Get user json:", user1_json)
-    response = client.get(f"/api/v1/users/{token1}/sessions", params=user1_json)
-    print("Get user response:", response.status_code, response.json())
-
-
-
+    # routers.user_sessions.get_user_sessions
+    # @params user_id: str, chat_id: Optional[str] = None, agent_id: Optional[str] = None
+    # @return Session_ids: List
+    response = client.get(f"/api/v1/users/{user1_id}/sessions", params=user1_json)
+    print("Get user session_ids response: ", response.json())
     assert response.status_code == 200
-    sessions = response.json()["sessions"]
-    assert len(sessions) == 1
-    assert sessions[0]["user_id"] == session_id1
+    user_sessions = response.json()[0]
+    assert len(user_sessions) == 1
+    print("session_id1 data id: ", session_id1["data"]["id"])
+    # get_user_sessions return session_ids
+    assert sessions[0] == session_id1["data"]["id"]
 
     # 用户2只能看到自己的会话
-    get_user2_json = {
+    user2_json = {
         "user_id": user2["username"],
         "chat_id": CHAT_ID
     }
-    response = client.post(f"/api/v1/users/{token2}/sessions", params=get_user2_json)
+    response = client.get(f"/api/v1/users/{user2_id}/sessions", params=user2_json)
     assert response.status_code == 200
-    sessions = response.json()["sessions"]
+    sessions = response.json()[0]
     assert len(sessions) == 1
-    assert sessions[0]["id"] == session_id2
+    assert sessions[0] == session_id2["data"]["id"]
 
 # def test_cannot_access_other_users_sessions(test_db):
 #     # 确保数据库为空
