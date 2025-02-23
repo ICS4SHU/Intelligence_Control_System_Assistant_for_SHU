@@ -15,11 +15,19 @@ async def create_chat_session(
 ):
     db = Database()
     try:
+        cursor = db.conn.cursor()
+        cursor.execute("SELECT * FROM users WHERE id=?", (session_data.user_id,))
+        if not cursor.fetchone():
+            raise HTTPException(status_code=400, detail="User not found")
+
         response = await forward_request(
             "POST",
             f"/api/v1/chats/{CHAT_ID}/sessions",
             json_data={"name": session_data.name, "user_id": session_data.user_id},
         )
+
+        print("\n\nCreate session response:\n", response)
+
         return response
     finally:
         db.close()

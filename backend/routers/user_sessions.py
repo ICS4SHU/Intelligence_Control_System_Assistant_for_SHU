@@ -40,8 +40,8 @@ async def get_user_sessions(
             f"/api/v1/chats/{agent_id}/sessions"
         )
 
-    for sessions in forward_request['data']:
-        if sessions['user_id'] != user_id:
-            forward_request['data'].remove(sessions)
+    # for sessions in forward_request['data']:
+    #     if sessions['user_id'] != user_id:
+    #         forward_request['data'].remove(sessions)
 
     return forward_response
