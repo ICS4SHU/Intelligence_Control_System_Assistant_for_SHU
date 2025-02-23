@@ -25,7 +25,7 @@ const AGENT_ID = {
   考试助手: "d8214c5ee7aa11efa80f0242ac120003",
   复习助手: "e3cfde42ed1a11ef9f240242ac120006",
 };
-const FAVORITE_USER_ID = "favorite_user";
+// const FAVORITE_USER_ID = "favorite_user";
 
 const ChatInterface = () => {
   const [conversations, setConversations] = useState([]);
@@ -48,33 +48,34 @@ const ChatInterface = () => {
 
   useEffect(() => {
     loadSessions();
-    loadFavorites();
+    // loadFavorites();
   }, []);
   // 从 localStorage 读取数据
   const userData = JSON.parse(localStorage.getItem("userData"));
   // userData {userId，assistantSessions，agentSessions} 使用 ${API_BASE_URL}/users/${userData.userId}
 
-  const loadFavorites = async () => {
-    try {
-      const response = await axios.get(
-        `${API_BASE_URL}/api/v1/chats/${CHAT_ID}/sessions`,
-        {
-          headers: { Authorization: `Bearer ${API_KEY}` },
-          params: {
-            page: 1,
-            page_size: 30,
-            user_id: FAVORITE_USER_ID,
-          },
-        }
-      );
+  // 加载标记为 favorite 的会话 暂时注释 2/23 20：34
+  // const loadFavorites = async () => {
+  //   try {
+  //     const response = await axios.get(
+  //       `${API_BASE_URL}/api/v1/chats/${CHAT_ID}/sessions`,
+  //       {
+  //         headers: { Authorization: `Bearer ${API_KEY}` },
+  //         params: {
+  //           page: 1,
+  //           page_size: 30,
+  //           user_id: FAVORITE_USER_ID,
+  //         },
+  //       }
+  //     );
 
-      if (response.data.code === 0 && Array.isArray(response.data.data)) {
-        setFavorites(response.data.data);
-      }
-    } catch (error) {
-      console.error("Error loading favorites:", error);
-    }
-  };
+  //     if (response.data.code === 0 && Array.isArray(response.data.data)) {
+  //       setFavorites(response.data.data);
+  //     }
+  //   } catch (error) {
+  //     console.error("Error loading favorites:", error);
+  //   }
+  // };
 
   const loadSessions = async () => {
     setIsLoading(true);
@@ -111,37 +112,37 @@ const ChatInterface = () => {
       setIsLoading(false);
     }
   };
+  // 选择收藏或者取消收藏
+  // const toggleFavorite = async (messageId) => {
+  //   const session = conversations.find((conv) =>
+  //     conv.messages.some((msg) => msg.id === messageId)
+  //   );
 
-  const toggleFavorite = async (messageId) => {
-    const session = conversations.find((conv) =>
-      conv.messages.some((msg) => msg.id === messageId)
-    );
+  //   if (!session) return;
 
-    if (!session) return;
+  //   const isFavorite = session.user_id === FAVORITE_USER_ID;
 
-    const isFavorite = session.user_id === FAVORITE_USER_ID;
+  //   try {
+  //     await axios.put(
+  //       `${API_BASE_URL}/api/v1/chats/${CHAT_ID}/sessions/${session.id}`,
+  //       {
+  //         name: session.name,
+  //         user_id: isFavorite ? "" : FAVORITE_USER_ID,
+  //       },
+  //       { headers: { Authorization: `Bearer ${API_KEY}` } }
+  //     );
 
-    try {
-      await axios.put(
-        `${API_BASE_URL}/api/v1/chats/${CHAT_ID}/sessions/${session.id}`,
-        {
-          name: session.name,
-          user_id: isFavorite ? "" : FAVORITE_USER_ID,
-        },
-        { headers: { Authorization: `Bearer ${API_KEY}` } }
-      );
-
-      const updatedConversations = conversations.map((conv) =>
-        conv.id === session.id
-          ? { ...conv, user_id: isFavorite ? "" : FAVORITE_USER_ID }
-          : conv
-      );
-      setConversations(updatedConversations);
-      loadFavorites();
-    } catch (error) {
-      console.error("Error toggling favorite:", error);
-    }
-  };
+  //     const updatedConversations = conversations.map((conv) =>
+  //       conv.id === session.id
+  //         ? { ...conv, user_id: isFavorite ? "" : FAVORITE_USER_ID }
+  //         : conv
+  //     );
+  //     setConversations(updatedConversations);
+  //     loadFavorites();
+  //   } catch (error) {
+  //     console.error("Error toggling favorite:", error);
+  //   }
+  // };
 
   const switchSession = (sessionId) => {
     if (sessionId === currentConversationId) return;
