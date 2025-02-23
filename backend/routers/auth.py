@@ -5,7 +5,6 @@ from pydantic import BaseModel
 from fastapi import APIRouter, Depends, HTTPException, status
 from datetime import datetime
 
-
 from ..models.user import User, UserCreate, UserLogin
 from ..models.db import Database, pwd_context
 

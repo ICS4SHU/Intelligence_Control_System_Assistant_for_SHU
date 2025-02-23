@@ -3,7 +3,7 @@ from fastapi import APIRouter, Depends, HTTPException
 
 from ..models.db import Database
 from ..models.session import SessionCreate, SessionUpdate
-
+from ..dependencies import verify_api_key, forward_request
 from ..config import CHAT_ID
 
 router = APIRouter()
