@@ -14,7 +14,7 @@ def login_user(login_id: str, password: str):
     response = client.post("/api/v1/auth/login", json=login_data)
     print("Login response:", response.status_code, response.json())
     assert response.status_code == 200
-    return response.json()["access_token"]
+    return response.json()["user_id"]
 
 @pytest.fixture(scope="function")
 def test_db():
@@ -67,9 +67,10 @@ def test_create_session_for_different_users(test_db):
 
     assert response1.status_code == 200
     assert response2.status_code == 200
-
+    print("response: ", response1.json())
     # 用户登录获取token
     token1 = login_user(user1["username"], user1["password"])
+    print(token1)
     token2 = login_user(user2["username"], user2["password"])
 
     # 为每个用户创建会话
@@ -85,12 +86,12 @@ def test_create_session_for_different_users(test_db):
     print("Create session response:", response1.status_code, response1.json())
     
     assert response1.status_code == 200
-    session_id1 = response1.json()["data"]["id"]
+    session_id1 = response1.json()
 
     # 用户2创建会话
     response2 = client.post("/api/v1/chats/{chat_id}/sessions", json=session_data2, headers=headers2)
     assert response2.status_code == 200
-    session_id2 = response2.json()["data"]["id"]
+    session_id2 = response2.json()
 
     # 验证会话隔离
     # 用户1只能看到自己的会话
@@ -98,7 +99,7 @@ def test_create_session_for_different_users(test_db):
     assert response.status_code == 200
     sessions = response.json()["sessions"]
     assert len(sessions) == 1
-    assert sessions[0]["id"] == session_id1
+    assert sessions[0]["user_id"] == session_id1
 
     # 用户2只能看到自己的会话
     response = client.get("/api/v1/sessions", headers=headers2)

@@ -19,7 +19,6 @@ async def create_session(
             "POST",
             f"/api/v1/chats/{CHAT_ID}/sessions",
             json_data={"name": session_data.name, "user_id": session_data.user_id},
-            api_key=api_key,
         )
         return response
     finally:

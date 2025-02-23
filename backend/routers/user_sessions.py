@@ -15,3 +15,10 @@ async def create_user_session(
     response = await create_session(session_data, user_id)
     
     return response
+
+@router.get("/sessions")
+async def get_user_sessions(
+    user_id: str = User.id
+
+):
+    return

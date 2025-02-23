@@ -52,12 +52,12 @@ def test_user_registration_case_sensitive_email(test_db):
     base_email = "test+" + str(hash("test_user_registration_case_sensitive_email")) + "@example.com"
     
     user_data1 = {
-        "username": "testuser7",
+        "username": "testuser7" + str(hash("test_user_registration_case_sensitive_email")),
         "email": base_email.lower(),
         "password": "securepassword123"
     }
     user_data2 = {
-        "username": "testuser8",
+        "username": "testuser8" + str(hash("test_user_registration_case_sensitive_email")),
         "email": base_email.upper(),
         "password": "securepassword123"
     }

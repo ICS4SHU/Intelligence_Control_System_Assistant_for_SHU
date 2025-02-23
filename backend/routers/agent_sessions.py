@@ -18,9 +18,8 @@ async def create_session(
     try:
         response = await forward_request(
             "POST",
-            f"/api/v1/chats/{AgentID.HOMEWORK}/sessions",
+            f"/api/v1/agents/{AgentID.HOMEWORK}/sessions",
             json_data={"name": session_data.name, "user_id": user_id},
-            api_key=api_key,
         )
         return response
     finally:
