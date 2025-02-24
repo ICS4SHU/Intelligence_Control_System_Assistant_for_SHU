@@ -22,24 +22,26 @@ const RegisterPage = () => {
     try {
       const response = await axios.post(`${apiBaseUrl}/api/v1/auth/register`, {
         username,
-        password,
+        studentId,
         email,
-        student_id: studentId,
+        password,
       });
 
-      // 如果注册成功，跳转到登录页面
-      if (response.data.code === 0) {
-        navigate('/login');
-      } else {
-        setError(response.data.message || '注册失败');
-      }
-    } catch (error) {
+      // 注册成功后端返回 200，直接跳转到登录页面
+    navigate('/login');
+  } catch (error) {
+    // 处理错误响应
+    if (error.response) {
+      // 后端返回了错误信息，如 400 等
+      setError(error.response.data.detail || '注册失败');
+    } else {
       setError('注册失败，请检查网络或联系管理员');
-      console.error('注册失败', error);
-    } finally {
-      setLoading(false);
     }
-  };
+    console.error('注册失败', error);
+  } finally {
+    setLoading(false);
+  }
+};
 
   return (
     <div className="register-container">
