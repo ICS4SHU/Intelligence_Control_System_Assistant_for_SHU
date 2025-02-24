@@ -162,7 +162,9 @@ const ChatInterface = () => {
     try {
       const response = await axios.post(
         `${API_BASE_URL}/api/v1/chats/${CHAT_ID}/sessions`,
-        { name: sessionName },
+        { name: sessionName,
+          user_id: userData.userId
+        },
         { headers: { Authorization: `Bearer ${API_KEY}` } }
       );
 
