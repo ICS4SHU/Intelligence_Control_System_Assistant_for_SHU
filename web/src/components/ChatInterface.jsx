@@ -2,13 +2,11 @@ import React, { useState, useRef, useEffect } from "react";
 import {
   Send,
   Plus,
-  MessageSquare,
-  History,
-  Bookmark,
   Copy,
   Trash2,
   Loader2,
   Star,
+  Search,
 } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
@@ -25,7 +23,56 @@ const AGENT_ID = {
   考试助手: "d8214c5ee7aa11efa80f0242ac120003",
   复习助手: "e3cfde42ed1a11ef9f240242ac120006",
 };
-// const FAVORITE_USER_ID = "favorite_user";
+
+// 工具函数
+const copyToClipboard = (text) => {
+  navigator.clipboard.writeText(text).then(() => {
+    alert('已复制到剪贴板');
+  });
+};
+
+// 会话操作菜单组件
+const SessionMenu = ({ session, onRename, onDelete }) => {
+  const [isOpen, setIsOpen] = useState(false);
+  const menuRef = useRef(null);
+
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (menuRef.current && !menuRef.current.contains(e.target)) {
+        setIsOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  return (
+    <div className="relative" ref={menuRef}>
+      <button
+        className="p-1 hover:bg-gray-700 rounded"
+        onClick={() => setIsOpen(!isOpen)}
+      >
+        •••
+      </button>
+      {isOpen && (
+        <div className="absolute right-0 mt-2 w-32 bg-gray-800 rounded-lg shadow-lg z-10">
+          <button
+            className="w-full px-4 py-2 text-left hover:bg-gray-700 rounded-t-lg"
+            onClick={onRename}
+          >
+            重命名
+          </button>
+          <button
+            className="w-full px-4 py-2 text-left hover:bg-gray-700 rounded-b-lg"
+            onClick={onDelete}
+          >
+            删除
+          </button>
+        </div>
+      )}
+    </div>
+  );
+};
 
 const ChatInterface = () => {
   const [conversations, setConversations] = useState([]);
@@ -34,8 +81,9 @@ const ChatInterface = () => {
   const [inputValue, setInputValue] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [isSending, setIsSending] = useState(false);
-  const [showFavorites, setShowFavorites] = useState(false);
-  const [favorites, setFavorites] = useState([]);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [selectedAgent, setSelectedAgent] = useState('智能助手');
+  const [error, setError] = useState(null);
   const chatEndRef = useRef(null);
 
   const scrollToBottom = () => {
@@ -48,34 +96,9 @@ const ChatInterface = () => {
 
   useEffect(() => {
     loadSessions();
-    // loadFavorites();
   }, []);
-  // 从 localStorage 读取数据
+
   const userData = JSON.parse(localStorage.getItem("userData"));
-  // userData {userId，assistantSessions，agentSessions} 使用 ${API_BASE_URL}/users/${userData.userId}
-
-  // 加载标记为 favorite 的会话 暂时注释 2/23 20：34
-  // const loadFavorites = async () => {
-  //   try {
-  //     const response = await axios.get(
-  //       `${API_BASE_URL}/api/v1/chats/${CHAT_ID}/sessions`,
-  //       {
-  //         headers: { Authorization: `Bearer ${API_KEY}` },
-  //         params: {
-  //           page: 1,
-  //           page_size: 30,
-  //           user_id: FAVORITE_USER_ID,
-  //         },
-  //       }
-  //     );
-
-  //     if (response.data.code === 0 && Array.isArray(response.data.data)) {
-  //       setFavorites(response.data.data);
-  //     }
-  //   } catch (error) {
-  //     console.error("Error loading favorites:", error);
-  //   }
-  // };
 
   const loadSessions = async () => {
     setIsLoading(true);
@@ -95,10 +118,8 @@ const ChatInterface = () => {
 
       if (response.data.code === 0 && Array.isArray(response.data.data)) {
         const sessionsWithMessages = response.data.data.map((session) => ({
-          id: session.id,
-          name: session.name,
+          ...session,
           messages: session.messages || [],
-          user_id: session.user_id,
         }));
         setConversations(sessionsWithMessages);
 
@@ -107,46 +128,15 @@ const ChatInterface = () => {
         }
       }
     } catch (error) {
-      console.error("Error loading sessions:", error);
+      setError('会话加载失败');
     } finally {
       setIsLoading(false);
     }
   };
-  // 选择收藏或者取消收藏
-  // const toggleFavorite = async (messageId) => {
-  //   const session = conversations.find((conv) =>
-  //     conv.messages.some((msg) => msg.id === messageId)
-  //   );
-
-  //   if (!session) return;
-
-  //   const isFavorite = session.user_id === FAVORITE_USER_ID;
-
-  //   try {
-  //     await axios.put(
-  //       `${API_BASE_URL}/api/v1/chats/${CHAT_ID}/sessions/${session.id}`,
-  //       {
-  //         name: session.name,
-  //         user_id: isFavorite ? "" : FAVORITE_USER_ID,
-  //       },
-  //       { headers: { Authorization: `Bearer ${API_KEY}` } }
-  //     );
-
-  //     const updatedConversations = conversations.map((conv) =>
-  //       conv.id === session.id
-  //         ? { ...conv, user_id: isFavorite ? "" : FAVORITE_USER_ID }
-  //         : conv
-  //     );
-  //     setConversations(updatedConversations);
-  //     loadFavorites();
-  //   } catch (error) {
-  //     console.error("Error toggling favorite:", error);
-  //   }
-  // };
 
   const switchSession = (sessionId) => {
     if (sessionId === currentConversationId) return;
-    const targetSession = [...conversations, ...favorites].find(
+    const targetSession = conversations.find(
       (conv) => conv.id === sessionId
     );
     if (targetSession) {
@@ -156,30 +146,66 @@ const ChatInterface = () => {
   };
 
   const createNewSession = async () => {
-    const sessionName = prompt("请输入会话名称:");
-    if (!sessionName) return;
-
+    const sessionName = prompt("请输入会话名称:") || `新会话 ${new Date().toLocaleString()}`;
+  
     try {
       const response = await axios.post(
         `${API_BASE_URL}/api/v1/chats/${CHAT_ID}/sessions`,
-        { name: sessionName,
-          user_id: userData.userId
+        { 
+          name: sessionName,
+          user_id: userData?.userId,
+          agent_id: AGENT_ID[selectedAgent]
         },
         { headers: { Authorization: `Bearer ${API_KEY}` } }
       );
 
       if (response.data.code === 0) {
         const newSession = {
-          id: response.data.data.id,
-          name: sessionName,
+          ...response.data.data,
           messages: response.data.data.messages || [],
-          user_id: "",
         };
         setConversations((prev) => [newSession, ...prev]);
         switchSession(newSession.id);
       }
     } catch (error) {
-      console.error("Error creating session:", error);
+      setError('创建会话失败');
+    }
+  };
+
+  const renameSession = async (sessionId) => {
+    const newName = prompt('输入新会话名称:') || `会话 ${new Date().toLocaleDateString()}`;
+  
+    try {
+      await axios.put(
+        `${API_BASE_URL}/api/v1/chats/${CHAT_ID}/sessions/${sessionId}`,
+        { name: newName },
+        { headers: { Authorization: `Bearer ${API_KEY}` } }
+      );
+      setConversations(prev =>
+        prev.map(conv => 
+          conv.id === sessionId ? { ...conv, name: newName } : conv
+        )
+      );
+    } catch (error) {
+      setError('重命名失败');
+    }
+  };
+
+  const deleteSession = async (sessionId) => {
+    if (!confirm('确定删除该会话？')) return;
+  
+    try {
+      await axios.delete(
+        `${API_BASE_URL}/api/v1/chats/${CHAT_ID}/sessions/${sessionId}`,
+        { headers: { Authorization: `Bearer ${API_KEY}` } }
+      );
+      setConversations(prev => prev.filter(conv => conv.id !== sessionId));
+      if (currentConversationId === sessionId) {
+        setCurrentConversationId(null);
+        setCurrentConversation(null);
+      }
+    } catch (error) {
+      setError('删除会话失败');
     }
   };
 
@@ -219,6 +245,7 @@ const ChatInterface = () => {
             question: userMessage.content,
             stream: true,
             session_id: currentConversationId,
+            agent_id: AGENT_ID[selectedAgent]
           }),
         }
       );
@@ -248,7 +275,7 @@ const ChatInterface = () => {
                     messages: [
                       ...currentConversation.messages.slice(0, -1),
                       {
-                        role: "assistant",
+                        ...currentConversation.messages.slice(-1)[0],
                         content: assistantResponse,
                         id: data.data.id,
                       },
@@ -269,7 +296,7 @@ const ChatInterface = () => {
         }
       }
     } catch (error) {
-      console.error("Error sending message:", error);
+      setError('消息发送失败');
     } finally {
       setIsSending(false);
     }
@@ -282,90 +309,178 @@ const ChatInterface = () => {
     }
   };
 
-  return (
-    <div className="flex h-screen bg-[#f0f2f5]">
-      {/* Sidebar */}
-      <div className="w-72 bg-gradient-to-b from-[#1a1c2e] to-[#2d2f42] text-white flex flex-col shadow-xl">
-        {/* Header */}
-        <div className="p-6 border-b border-gray-700/50">
-          <h1 className="text-2xl font-bold bg-gradient-to-r from-blue-400 to-purple-500 bg-clip-text text-transparent">
-            Learning Assistant
-          </h1>
+  const filteredConversations = conversations.filter(conv =>
+    conv.name.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
+  const MessageBubble = ({ message }) => {
+    const [showActions, setShowActions] = useState(false);
+
+    return (
+      <div
+        className="relative group"
+        onMouseEnter={() => setShowActions(true)}
+        onMouseLeave={() => setShowActions(false)}
+      >
+        <div className={`px-4 py-2 max-w-[70%] rounded-lg relative ${
+          message.role === 'user' 
+            ? 'bg-blue-500 text-white' 
+            : 'bg-gray-200'
+        }`}>
+          <ReactMarkdown
+            components={{
+              code: ({ node, inline, className, children, ...props }) => {
+                const match = /language-(\w+)/.exec(className || '');
+                if (!inline && match) {
+                  return (
+                    <div className="relative">
+                      <button
+                        className="absolute right-2 top-2 p-1 bg-gray-700 rounded hover:bg-gray-600"
+                        onClick={() => copyToClipboard(String(children))}
+                      >
+                        <Copy size={16} />
+                      </button>
+                      <SyntaxHighlighter
+                        style={vscDarkPlus}
+                        language={match[1]}
+                        PreTag="div"
+                        {...props}
+                      >
+                        {String(children).replace(/\n$/, '')}
+                      </SyntaxHighlighter>
+                    </div>
+                  );
+                }
+                return <code className={className} {...props}>{children}</code>;
+              },
+              table: ({ children }) => (
+                <div className="overflow-x-auto">
+                  <table className="border-collapse border border-gray-300">
+                    {children}
+                  </table>
+                </div>
+              ),
+              blockquote: ({ children }) => (
+                <blockquote className="border-l-4 border-gray-500 pl-4 italic text-gray-600">
+                  {children}
+                </blockquote>
+              ),
+            }}
+          >
+            {message.content}
+          </ReactMarkdown>
         </div>
-
-        {/* New Chat Button */}
-        <button
-          className="mx-4 my-5 px-4 py-3 bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600 text-white rounded-lg flex items-center justify-center"
-          onClick={createNewSession}
-        >
-          <Plus className="mr-2" />
-          新建会话
-        </button>
-
-        {/* Sessions List */}
-        <div className="flex-1 overflow-y-auto">
-          <div className="mx-4 my-3">
-            {showFavorites ? (
-              <>
-                <button
-                  className="w-full text-left text-lg mb-2"
-                  onClick={() => setShowFavorites(false)}
-                >
-                  所有会话
-                </button>
-                <ul className="space-y-2">
-                  {favorites.map((session) => (
-                    <li
-                      key={session.id}
-                      className="cursor-pointer hover:bg-gray-800 p-2 rounded-lg"
-                      onClick={() => switchSession(session.id)}
-                    >
-                      <h3 className="text-lg font-medium">{session.name}</h3>
-                    </li>
-                  ))}
-                </ul>
-              </>
-            ) : (
-              <>
-                <button
-                  className="w-full text-left text-lg mb-2"
-                  onClick={() => setShowFavorites(true)}
-                >
-                  收藏会话
-                </button>
-                <ul className="space-y-2">
-                  {conversations.map((session) => (
-                    <li
-                      key={session.id}
-                      className="cursor-pointer hover:bg-gray-800 p-2 rounded-lg"
-                      onClick={() => switchSession(session.id)}
-                    >
-                      <h3 className="text-lg font-medium">{session.name}</h3>
-                    </li>
-                  ))}
-                </ul>
-              </>
+      
+        {showActions && (
+          <div className={`absolute flex gap-2 ${message.role === 'user' ? 'left-0' : 'right-0'} -top-4`}>
+            <button
+              className="p-1 bg-gray-700 rounded hover:bg-gray-600"
+              onClick={() => copyToClipboard(message.content)}
+            >
+              <Copy size={16} />
+            </button>
+            <button
+              className="p-1 bg-gray-700 rounded hover:bg-gray-600"
+              onClick={() => alert('收藏功能待实现')}
+            >
+              <Star size={16} />
+            </button>
+            {message.role === 'user' && (
+              <button
+                className="p-1 bg-red-700 rounded hover:bg-red-600"
+                onClick={() => {
+                  const newMessages = currentConversation.messages.filter(m => m !== message);
+                  setCurrentConversation({...currentConversation, messages: newMessages});
+                }}
+              >
+                <Trash2 size={16} />
+              </button>
             )}
           </div>
+        )}
+      </div>
+    );
+  };
+
+  return (
+    <div className="flex h-screen bg-[#f0f2f5]">
+      {/* 侧边栏 */}
+      <div className="w-72 bg-gradient-to-b from-[#1a1c2e] to-[#2d2f42] text-white flex flex-col shadow-xl">
+        <div className="p-4 border-b border-gray-700/50">
+          <div className="flex items-center gap-2 mb-4">
+            <Search className="text-gray-400" />
+            <input
+              type="text"
+              placeholder="搜索会话..."
+              className="w-full p-2 bg-gray-800 rounded"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+            />
+          </div>
+          <button
+            className="w-full py-2 px-4 bg-blue-600 hover:bg-blue-700 rounded flex items-center justify-center"
+            onClick={createNewSession}
+          >
+            <Plus className="mr-2" />
+            新建会话
+          </button>
+        </div>
+
+        <div className="flex-1 overflow-y-auto p-2">
+          {filteredConversations.map((session) => (
+            <div
+              key={session.id}
+              className={`flex justify-between items-center p-2 hover:bg-gray-800 rounded-lg mb-2 ${
+                session.id === currentConversationId ? 'bg-gray-800' : ''
+              }`}
+            >
+              <div 
+                className="flex-1 cursor-pointer"
+                onClick={() => switchSession(session.id)}
+              >
+                <div className="flex items-center gap-2">
+                  <span className="text-sm text-blue-400">#{session.id.slice(-4)}</span>
+                  <h3 className="text-base font-medium truncate">{session.name}</h3>
+                </div>
+                <p className="text-xs text-gray-400 mt-1">
+                  {session.messages.length}条消息 • 
+                  {new Date(session.update_time).toLocaleDateString()}
+                </p>
+              </div>
+              <SessionMenu
+                session={session}
+                onRename={() => renameSession(session.id)}
+                onDelete={() => deleteSession(session.id)}
+              />
+            </div>
+          ))}
         </div>
       </div>
 
-      {/* Chat Content */}
-      <div className="flex flex-col w-full">
-        {/* Chat Header */}
-        <div className="px-5 py-4 border-b border-gray-300 flex justify-between items-center">
-          {currentConversation ? (
-            <h2 className="text-2xl font-semibold">
-              {currentConversation.name}
-            </h2>
-          ) : (
-            <h2 className="text-2xl font-semibold">请选择会话</h2>
-          )}
+      {/* 主聊天区域 */}
+      <div className="flex flex-col flex-1">
+        <div className="px-6 py-4 border-b border-gray-300 flex justify-between items-center bg-white">
+          <div className="flex items-center gap-4">
+            <select
+              className="px-4 py-2 bg-gray-100 rounded border border-gray-300"
+              value={selectedAgent}
+              onChange={(e) => setSelectedAgent(e.target.value)}
+            >
+              {Object.keys(AGENT_ID).map(agent => (
+                <option key={agent} value={agent}>{agent}</option>
+              ))}
+            </select>
+            {currentConversation && (
+              <h2 className="text-xl font-semibold">
+                {currentConversation.name}
+              </h2>
+            )}
+          </div>
+          {error && <div className="text-red-500">{error}</div>}
         </div>
 
-        {/* Chat Messages */}
-        <div className="flex-1 p-5 overflow-y-auto">
-          <div className="space-y-4">
+        <div className="flex-1 p-6 overflow-y-auto bg-gray-50">
+          <div className="max-w-4xl mx-auto space-y-4">
             {currentConversation?.messages.map((message, idx) => (
               <div
                 key={idx}
@@ -373,66 +488,39 @@ const ChatInterface = () => {
                   message.role === "user" ? "justify-end" : "justify-start"
                 }`}
               >
-                <div
-                  className={`px-4 py-2 max-w-[70%] rounded-lg ${
-                    message.role === "user"
-                      ? "bg-blue-500 text-white"
-                      : "bg-gray-200"
-                  }`}
-                >
-                  <ReactMarkdown
-                    components={{
-                      code: ({
-                        node,
-                        inline,
-                        className,
-                        children,
-                        ...props
-                      }) => {
-                        const match = /language-(\w+)/.exec(className || "");
-                        return !inline && match ? (
-                          <SyntaxHighlighter
-                            style={vscDarkPlus}
-                            language={match[1]}
-                            PreTag="div"
-                            {...props}
-                          >
-                            {String(children).replace(/\n$/, "")}
-                          </SyntaxHighlighter>
-                        ) : (
-                          <code className={className} {...props}>
-                            {children}
-                          </code>
-                        );
-                      },
-                    }}
-                  >
-                    {message.content}
-                  </ReactMarkdown>
-                </div>
+                <MessageBubble message={message} />
               </div>
             ))}
+            <div ref={chatEndRef} />
           </div>
-          <div ref={chatEndRef}></div>
         </div>
 
-        {/* Input Area */}
-        <div className="border-t border-gray-300 p-4 flex items-center space-x-4">
-          <textarea
-            className="w-full p-3 bg-gray-200 rounded-lg resize-none"
-            rows="2"
-            value={inputValue}
-            onChange={(e) => setInputValue(e.target.value)}
-            onKeyDown={handleKeyPress}
-            placeholder="输入消息..."
-          />
-          <button
-            className="p-3 bg-blue-500 rounded-lg text-white"
-            onClick={sendMessage}
-            disabled={isSending || !inputValue.trim()}
-          >
-            {isSending ? <Loader2 className="animate-spin" /> : <Send />}
-          </button>
+        <div className="p-4 border-t border-gray-300 bg-white">
+          <div className="max-w-4xl mx-auto flex gap-4 items-start">
+            <div className="relative flex-1">
+              <textarea
+                className="w-full p-3 bg-gray-100 rounded-lg resize-none border border-gray-300 focus:ring-2 focus:ring-blue-400 pr-16"
+                rows="2"
+                value={inputValue}
+                onChange={(e) => setInputValue(e.target.value)}
+                onKeyDown={handleKeyPress}
+                placeholder="输入消息..."
+              />
+              {isSending && (
+                <div className="absolute right-4 top-4 text-gray-500 flex items-center gap-2">
+                  <Loader2 className="animate-spin" size={18} />
+                  <span>思考中...</span>
+                </div>
+              )}
+            </div>
+            <button
+              className="p-3 bg-blue-600 hover:bg-blue-700 rounded-lg text-white disabled:opacity-50 flex items-center"
+              onClick={sendMessage}
+              disabled={isSending || !inputValue.trim()}
+            >
+              <Send size={20} />
+            </button>
+          </div>
         </div>
       </div>
     </div>
