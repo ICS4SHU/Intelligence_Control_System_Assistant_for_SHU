@@ -12,7 +12,7 @@ from ..dependencies import verify_api_key #, get_current_user_from_token  # 引�
 router = APIRouter()
 
 @router.post("/completions")
-async def create_completion(
+async def create_agent_completion(
     chat_id: str, message: Message,
     user: dict = Depends(verify_api_key)  # 获取当前用户信息
 ):
@@ -20,7 +20,7 @@ async def create_completion(
     try:
         db.save_message(message)
 
-        url = f"{API_BASE_URL}/api/v1/chats/{chat_id}/completions"
+        url = f"{API_BASE_URL}/api/v1/agents/{chat_id}/completions"
         headers = {
             "Authorization": f"Bearer {api_key}",
             "Content-Type": "application/json",

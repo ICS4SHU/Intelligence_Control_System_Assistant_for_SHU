@@ -109,7 +109,7 @@ def test_create_session_for_different_users(test_db):
     assert len(user_sessions) == 1
     print("session_id1 data id: ", session_id1["data"]["id"])
     # get_user_sessions return session_ids
-    assert sessions[0] == session_id1["data"]["id"]
+    assert user_sessions[0] == session_id1["data"]["id"]
 
     # 用户2只能看到自己的会话
     user2_json = {
